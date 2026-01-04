@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="heat-wrapper">
+        <svg class="heat-icon" id="heat-icon-el" viewBox="0 0 24 24">
+            <path d="M12,22c4.97,0,9-4.03,9-9c0-4.97-9-13-9-13S3,8.03,3,13C3,17.97,7.03,22,12,22z M10.5,9.5 c0,0,3.5,2.5,3.5,5.5c0,1.93-1.57,3.5-3.5,3.5S7,16.93,7,15C7,12.5,10.5,9.5,10.5,9.5z" />
+        </svg>
+
+        <div id="heat-text"></div>
+        
+        <div id="heat-container">
+            <div id="heat-fill"></div>
+        </div>
+    </div>
+
+    <div id="png-wrapper">
+        <div class="weapon-mask-container">
+            <div id="png-bg" class="weapon-bg-layer"></div>
+            <div id="png-fill" class="weapon-fill-layer"></div>
+        </div>
+        <div id="heat-text-label" class="heat-text-label">WEAPON HOT</div>
+    </div>
+
+    <div id="notify-container"></div>
+
+    <div id="logic-modal">
+        <div class="modal-header">
+            <div class="modal-title">Weapon Configuration</div>
+            <button class="btn-close" onclick="closeSettings()"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+            <div class="input-group" style="flex: 1;">
+                <div class="label-row">
+                    <div class="label-left">
+                        PARTICLE DICT
+                        <div class="tooltip">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span class="tooltip-text">The file name of the GTA V particle dictionary (e.g., 'core'). Leave default if unsure.</span>
+                        </div>
+                    </div>
+                </div>
+                <input type="text" id="in-dict" class="text-input" placeholder="core">
+            </div>
+            <div class="input-group" style="flex: 1;">
+                <div class="label-row">
+                    <div class="label-left">
+                        PARTICLE NAME
+                        <div class="tooltip">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span class="tooltip-text">The specific effect name inside the dictionary (e.g., 'exp_grd_grenade_smoke').</span>
+                        </div>
+                    </div>
+                </div>
+                <input type="text" id="in-name" class="text-input" placeholder="exp_grd_grenade_smoke">
+            </div>
+        </div>
+
+        <div class="input-group" style="margin-top: 15px;">
+            <div class="label-row">
+                <div class="label-left">
+                    MOVEMENT MODE
+                    <div class="tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span class="tooltip-text">ON = Natural (smoke stays in world air). OFF = Attached (smoke sticks to gun barrel).</span>
+                    </div>
+                </div>
+                <span id="val-movement" class="input-val-display">OFF</span>
+            </div>
+            
+            <label class="switch">
+                <input type="checkbox" id="in-movement">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="input-group" style="margin-top: 15px;">
+            <div class="label-row">
+                <div class="label-left">
+                    JAMMING
+                    <div class="tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span class="tooltip-text">ON = Weapon can jam when overheated. OFF = Weapon never jams.</span>
+                    </div>
+                </div>
+                <span id="val-jamming" class="input-val-display">ON</span>
+            </div>
+            
+            <label class="switch">
+                <input type="checkbox" id="in-jamming">
+                <span class="slider slider-jam"></span>
+            </label>
+        </div>
+
+        <div class="input-group">
+            <div class="label-row">
+                <div class="label-left">
+                    JAM TIME (SEC)
+                    <div class="tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span class="tooltip-text">How long the weapon stays jammed in seconds.</span>
+                    </div>
+                </div>
+                <span id="val-jam-dur" class="input-val-display">3.0</span>
+            </div>
+            <input type="range" id="in-jam-dur" min="1.0" max="10.0" step="0.5">
+        </div>
+
+        <div style="width: 100%; height: 1px; background: var(--border-color); margin: 15px 0 20px 0;"></div>
+
+        <div class="input-group">
+            <div class="label-row">
+                <div class="label-left">
+                    HEAT PER SHOT
+                    <div class="tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span class="tooltip-text">How fast the smoke grows with each shot. Higher value means the gun smokes up faster.</span>
+                    </div>
+                </div>
+                <span id="val-heat" class="input-val-display">0.00</span>
+            </div>
+            <input type="range" id="in-heat" min="0.01" max="1.0" step="0.01">
+        </div>
+
+        <div class="input-group">
+            <div class="label-row">
+                <div class="label-left">
+                    MAX HEAT SCALE
+                    <div class="tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span class="tooltip-text">The maximum size multiplier the smoke can reach during continuous fire. 1.0 = Normal Size.</span>
+                    </div>
+                </div>
+                <span id="val-max" class="input-val-display">0.00</span>
+            </div>
+            <input type="range" id="in-max" min="0.1" max="5.0" step="0.1">
+        </div>
+
+        <div class="input-group">
+            <div class="label-row">
+                <div class="label-left">
+                    DURATION (SEC)
+                    <div class="tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span class="tooltip-text">How many seconds the weapon continues to smoke after you stop shooting (Cool-down time).</span>
+                    </div>
+                </div>
+                <span id="val-dur" class="input-val-display">0.0</span>
+            </div>
+            <input type="range" id="in-dur" min="1.0" max="60.0" step="0.5">
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-cancel" onclick="closeSettings()">Cancel</button>
+            <button class="btn btn-save" onclick="saveSettings()">Save Changes</button>
+        </div>
+    </div>
+
+    <div id="dashboard">
+        <div class="section">
+            <div class="group-label">INFO</div>
+            <div class="status-box">
+                <div style="display: flex; gap: 5px;">
+                    <div id="mode-badge" class="badge active" style="flex:1;">POS</div>
+                    <div id="gizmo-badge" class="badge gizmo-on" style="flex:1;">GIZMO</div>
+                </div>
+                <div id="speed-badge" class="badge spd-NORMAL">NORM</div>
+                <div id="ctrl-badge" class="badge" style="opacity: 0.3;">FREE LOOK</div>
+            </div>
+        </div>
+        <div class="section">
+            <div class="group-label" style="color: var(--accent-blue);">POS</div>
+            <div class="coords-grid">
+                <div class="coord-box"><div class="coord-label">X</div><div class="coord-val txt-blue" id="px">0.000</div></div>
+                <div class="coord-box"><div class="coord-label">Y</div><div class="coord-val txt-blue" id="py">0.000</div></div>
+                <div class="coord-box"><div class="coord-label">Z</div><div class="coord-val txt-blue" id="pz">0.000</div></div>
+            </div>
+        </div>
+        <div class="section">
+            <div class="group-label" style="color: var(--accent-orange);">ROT</div>
+            <div class="coords-grid">
+                <div class="coord-box"><div class="coord-label">PITCH</div><div class="coord-val txt-orange" id="rx">0.0</div></div>
+                <div class="coord-box"><div class="coord-label">ROLL</div><div class="coord-val txt-orange" id="ry">0.0</div></div>
+                <div class="coord-box"><div class="coord-label">YAW</div><div class="coord-val txt-orange" id="rz">0.0</div></div>
+            </div>
+        </div>
+        <div class="section">
+            <div class="group-label">CFG</div>
+            <div class="coord-box"><div class="coord-label">SCALE</div><div class="coord-val" id="scale-val">1.00</div></div>
+            <div class="coord-box" style="margin-left: 10px;"><div class="coord-label">AUTO</div><div class="coord-val" id="auto-val" style="font-size: 12px; color: #6b7280;">OFF</div></div>
+        </div>
+        <div class="section" style="border: none;">
+            <div class="controls">
+                <div class="key-row"><span class="kbd">CAPS</span> Mode</div>
+                <div class="key-row"><span class="kbd">SHIFT</span> Spd</div>
+                <div class="key-row"><span class="kbd" id="key-x">X</span> Mouse</div>
+                <div class="key-row"><span class="kbd" id="key-ctrl">RMB</span> Look</div>
+                <div class="key-row"><span class="kbd">K</span> Logic</div> 
+                <div class="key-row"><span class="kbd">ALT</span> Test</div>
+
+                <div class="key-row"><span class="kbd">ENT</span> Save</div>
+                <div class="key-row"><span class="kbd">C</span> Hide</div>
+                <div class="key-row"><span class="kbd">L</span> Auto</div>
+                <div class="key-row"><span class="kbd">NUM</span> Size</div>
+                <div class="key-row"><span class="kbd">R</span> Reset</div>
+                <div class="key-row"><span class="kbd">M</span> Browser</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="particle-modal">
+        <div class="modal-header">
+            <div class="modal-title">Particle Browser</div>
+            <button class="btn-close" onclick="toggleParticleMenu(false)">
+                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+        </div>
+        
+        <div class="browser-tabs">
+            <button class="tab-btn active" onclick="switchTab('all')" id="tab-all">ALL PARTICLES</button>
+            <button class="tab-btn" onclick="switchTab('fav')" id="tab-fav">FAVORITES ⭐</button>
+        </div>
+
+        <input type="text" id="particle-search" class="text-input" placeholder="Search (e.g., 'smoke', 'core')..." onkeyup="filterParticles()">
+        
+        <div id="particle-list" class="particle-list-container">
+            </div>
+
+        <div class="modal-info">
+            [LMB] Preview & Select &nbsp; • &nbsp; [STAR] Favorite &nbsp; • &nbsp; [RMB] Copy Name
+        </div>
+    </div>
+    
+    <script src="particles.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
