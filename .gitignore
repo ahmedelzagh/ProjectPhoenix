@@ -1,2 +1,9 @@
 
 cache/*
+
+# History files
+.replxx_history
+
+# Backup files
+*.backup
+*.bkp
