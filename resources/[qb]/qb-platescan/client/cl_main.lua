@@ -126,19 +126,26 @@ local function whitelistedVehicle()
     return retval
 end
 
-RegisterCommand('+platescan', function()
+-- Command for scanning plates from inside police vehicles (using keyboard key 'G')
+RegisterCommand('platescan', function()
 	-- Early return checks - prevent command from running at all if conditions aren't met
 	local currentTime = GetGameTimer()
 	if currentTime - lastPlateScan < plateScanCooldown then return end
 	
 	-- Check if player job data is loaded and player is police
-	if not PlayerJob or not PlayerJob.name or PlayerJob.name ~= "police" then return end
+	if not PlayerJob or not PlayerJob.name or PlayerJob.name ~= "police" then 
+		return 
+	end
 	
 	-- Check if player is in a police vehicle
-	if not IsPedInAnyPoliceVehicle(PlayerPedId()) then return end
+	if not IsPedInAnyPoliceVehicle(PlayerPedId()) then 
+		return 
+	end
 	
 	-- Check if phone/menu is active
-	if IsPhoneActive() or IsPauseMenuActive() or IsAimCamActive() then return end
+	if IsPhoneActive() or IsPauseMenuActive() or IsAimCamActive() then 
+		return 
+	end
 	
 	lastPlateScan = currentTime
 	local data, vData, vehicle = exports["wk_wars2x"]:GetFrontPlate(), {}
@@ -154,19 +161,25 @@ RegisterCommand('+platescan', function()
 			class = vehicle.class,
 		}
 	else
-		vehicle = vehicleData(lastVeh)
-		vData = {
-			locked = data.locked,
-			veh = lastVeh,
-			plate = lastPlate,
-			name = vehicle.name,
-			class = vehicle.class,
-		}
+		if lastVeh and lastVeh ~= 0 then
+			vehicle = vehicleData(lastVeh)
+			vData = {
+				locked = data.locked,
+				veh = lastVeh,
+				plate = lastPlate,
+				name = vehicle.name,
+				class = vehicle.class,
+			}
+		else
+			return -- No vehicle to scan
+		end
 	end
 	TriggerServerEvent("qb-platescan:server:ScanPlate", vData)
 end)
 
-RegisterKeyMapping('+platescan', 'Scan Plate (Police)', 'mouse_button', 'MOUSE_LEFT')
+-- Optional: Map to 'G' key for easy access while in police vehicles
+-- Players can also use /platescan command directly
+RegisterKeyMapping('platescan', 'Scan Plate (Police Vehicle)', 'keyboard', 'G')
 
 RegisterNetEvent('qb-platescan:client:qbTargetPlate', function(entity)
 	local PlayerData = QBCore.Functions.GetPlayerData()
