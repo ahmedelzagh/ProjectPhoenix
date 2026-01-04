@@ -1,0 +1,121 @@
+
+#Resource Config Add Or Remove Resource Here.
+# ⚠️ FREE VERSION - All Gabz (paid) resources commented out
+
+# Illenium Apperance Config
+setr illenium-appearance:locale "en" 
+
+#Ensure ox resources before qbcore.
+ensure oxmysql
+ensure ox_lib
+ensure ox_target
+
+# QBCore & Extra stuff
+ensure qb-core
+ensure illenium-appearance
+ensure [qb]
+ensure [ui]
+ensure [standalone]
+ensure [voice]
+ensure [defaultmaps]
+ensure [vehicles]
+ensure [stream]
+ensure [identity-card]
+ensure [config] #Make sure to check this before you run the server.
+ensure ox_doorlock
+
+##Only set one of them to TRUE or you will face overlaps!
+
+#Paid Scripts - qb-config
+#exec paidscripts.cfg #Hash this out if you are not using the paid scripts.
+
+#Free Scripts - qbconfig
+#exec freescripts.cfg
+
+
+# ============================================
+# GABZ RESOURCES (PAID) - ALL COMMENTED OUT
+# ============================================
+# These are PAID scripts. Use vanilla GTA V locations instead (FREE)
+# Vanilla locations work perfectly and are built into GTA V
+# ============================================
+
+#ensure cfx-gabz-mapdata         #*PAID - Use vanilla locations instead*
+#ensure cfx-gabz-scenarios       #*PAID - Optional, removes conflicting peds*
+#ensure cfx-gabz-pdprops         #*PAID - Only needed for Gabz PD interiors*
+#ensure cfx-gabz-247             #*PAID - Use vanilla 24/7 stores*
+#ensure cfx-gabz-altruists        #*PAID*
+#ensure cfx-gabz-ammunation       #*PAID - Use vanilla Ammunation*
+#ensure cfx-gabz-arcade          #*PAID*
+#ensure cfx-gabz-atom            #*PAID*
+#ensure cfx-gabz-aztecas         #*PAID*
+#ensure cfx-gabz-bahama          #*PAID*
+#ensure cfx-gabz-ballas          #*PAID*
+#ensure cfx-gabz-barber          #*PAID - Use vanilla barbers*
+#ensure cfx-gabz-beanmachine     #*PAID*
+#ensure cfx-gabz-bennys          #*PAID - Use vanilla LSC*
+#ensure cfx-gabz-binco           #*PAID - Use vanilla clothing stores*
+#ensure cfx-gabz-bobcat          #*PAID*
+#ensure cfx-gabz-bowling         #*PAID*
+#ensure cfx-gabz-burgershot      #*PAID*
+#ensure cfx-gabz-carmeet         #*PAID*
+#ensure cfx-gabz-casino          #*PAID*
+#ensure cfx-gabz-catcafe         #*PAID*
+#ensure cfx-gabz-davispd         #*PAID - Use vanilla Davis PD*
+#ensure cfx-gabz-diner            #*PAID*
+#ensure cfx-gabz-esbltd          #*PAID*
+#ensure cfx-gabz-families        #*PAID*
+#ensure cfx-gabz-firedept        #*PAID*
+#ensure cfx-gabz-fleeca          #*PAID - Use vanilla Fleeca banks*
+#ensure cfx-gabz-harmony         #*PAID*
+#ensure cfx-gabz-haters          #*PAID*
+#ensure cfx-gabz-hayes           #*PAID*
+#ensure cfx-gabz-hornys          #*PAID*
+#ensure cfx-gabz-import          #*PAID*
+#ensure cfx-gabz-impound         #*PAID*
+#ensure cfx-gabz-koi             #*PAID*
+#ensure cfx-gabz-lamesapd        #*PAID - Use vanilla La Mesa PD*
+#ensure cfx-gabz-lost            #*PAID*
+#ensure cfx-gabz-lostsc          #*PAID*
+#ensure cfx-gabz-lscustoms       #*PAID - Use vanilla LSC*
+#ensure cfx-gabz-marabunta       #*PAID*
+#ensure cfx-gabz-mba             #*PAID*
+#ensure cfx-gabz-mirrorpark1     #*PAID*
+#ensure cfx-gabz-mirrorpark2     #*PAID*
+#ensure cfx-gabz-mrpd            #*PAID - Use vanilla MRPD (FREE!)*
+#ensure cfx-gabz-ottos           #*PAID*
+#ensure cfx-gabz-pacificbank     #*PAID - Use vanilla Pacific Bank*
+#ensure cfx-gabz-paletobank      #*PAID - Use vanilla Paleto Bank*
+#ensure cfx-gabz-paletocamp      #*PAID*
+#ensure cfx-gabz-paletoliquor    #*PAID*
+#ensure cfx-gabz-paletopd        #*PAID - Use vanilla Paleto PD*
+#ensure cfx-gabz-parkranger      #*PAID*
+#ensure cfx-gabz-pearls          #*PAID*
+#ensure cfx-gabz-pdm             #*PAID - Use vanilla PDM*
+#ensure cfx-gabz-pillbox         #*PAID - Use vanilla Pillbox Medical*
+#ensure cfx-gabz-pinkcage        #*PAID*
+#ensure cfx-gabz-pizzeria        #*PAID*
+#ensure cfx-gabz-ponsonbys       #*PAID*
+#ensure cfx-gabz-prison          #*PAID - Use vanilla Bolingbroke Prison*
+#ensure cfx-gabz-records         #*PAID*
+#ensure cfx-gabz-sandypd         #*PAID - Use vanilla Sandy Shores PD*
+#ensure cfx-gabz-studio          #*PAID*
+#ensure cfx-gabz-suburban        #*PAID*
+#ensure cfx-gabz-tattoo          #*PAID - Use vanilla tattoo shops*
+#ensure cfx-gabz-townhall        #*PAID*
+#ensure cfx-gabz-triads          #*PAID*
+#ensure cfx-gabz-tuners          #*PAID*
+#ensure cfx-gabz-vagos           #*PAID*
+#ensure cfx-gabz-vbmarket        #*PAID*
+#ensure cfx-gabz-vu              #*PAID*
+#ensure cfx-gabz-weedcamp        #*PAID*
+#ensure cfx-gabz-yachts          #*PAID*
+
+# ============================================
+# NOTES:
+# - All vanilla locations work perfectly with ox_doorlock
+# - Vanilla MRPD doorlocks are already in your database (named "mrpd 1", "mrpd 2", etc.)
+# - Your qb-policejob config already uses vanilla MRPD coordinates
+# - No map files needed - vanilla locations are built into GTA V
+# ============================================
+

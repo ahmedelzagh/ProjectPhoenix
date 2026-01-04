@@ -17,8 +17,8 @@ local function createDoor(door)
 	if double then
 		for i = 1, 2 do
 			AddDoorToSystem(double[i].hash, double[i].model, double[i].coords.x, double[i].coords.y, double[i].coords.z, false, false, false)
-			DoorSystemSetDoorState(double[i].hash, 4, false, false)
-			DoorSystemSetDoorState(double[i].hash, door.state, false, false)
+			DoorSystemSetDoorState(double[i].hash, 4, false, true)
+			DoorSystemSetDoorState(double[i].hash, door.state, false, true)
 
 			if door.doorRate or not door.auto then
 				DoorSystemSetAutomaticRate(double[i].hash, door.doorRate or 10.0, false, false)
@@ -26,8 +26,8 @@ local function createDoor(door)
 		end
 	else
 		AddDoorToSystem(door.hash, door.model, door.coords.x, door.coords.y, door.coords.z, false, false, false)
-		DoorSystemSetDoorState(door.hash, 4, false, false)
-		DoorSystemSetDoorState(door.hash, door.state, false, false)
+		DoorSystemSetDoorState(door.hash, 4, false, true)
+		DoorSystemSetDoorState(door.hash, door.state, false, true)
 
 		if door.doorRate or not door.auto then
 			DoorSystemSetAutomaticRate(door.hash, door.doorRate or 10.0, false, false)
@@ -157,20 +157,38 @@ RegisterNetEvent('ox_doorlock:setState', function(id, state, source, data)
 	door.state = state
 
 	if double then
-		DoorSystemSetDoorState(double[1].hash, door.state, false, false)
-		DoorSystemSetDoorState(double[2].hash, door.state, false, false)
+		-- Force update door state (fourth parameter = forceUpdate)
+		DoorSystemSetDoorState(double[1].hash, door.state, false, true)
+		DoorSystemSetDoorState(double[2].hash, door.state, false, true)
 
 		if door.holdOpen then
 			DoorSystemSetHoldOpen(double[1].hash, door.state == 0)
 			DoorSystemSetHoldOpen(double[2].hash, door.state == 0)
 		end
 
-		while door.state == 1 and (not IsDoorClosed(double[1].hash) or not IsDoorClosed(double[2].hash)) do Wait(0) end
+		-- Wait for doors to close if locking
+		if door.state == 1 then
+			while not IsDoorClosed(double[1].hash) or not IsDoorClosed(double[2].hash) do
+				Wait(0)
+			end
+			-- Force update again after door closes to ensure it stays locked
+			DoorSystemSetDoorState(double[1].hash, door.state, false, true)
+			DoorSystemSetDoorState(double[2].hash, door.state, false, true)
+		end
 	else
-		DoorSystemSetDoorState(door.hash, door.state, false, false)
+		-- Force update door state (fourth parameter = forceUpdate)
+		DoorSystemSetDoorState(door.hash, door.state, false, true)
 
 		if door.holdOpen then DoorSystemSetHoldOpen(door.hash, door.state == 0) end
-		while door.state == 1 and not IsDoorClosed(door.hash) do Wait(0) end
+		
+		-- Wait for door to close if locking
+		if door.state == 1 then
+			while not IsDoorClosed(door.hash) do
+				Wait(0)
+			end
+			-- Force update again after door closes to ensure it stays locked
+			DoorSystemSetDoorState(door.hash, door.state, false, true)
+		end
 	end
 
 	if door.state == state and door.distance and door.distance < 20 then
@@ -213,12 +231,12 @@ RegisterNetEvent('ox_doorlock:editDoorlock', function(id, data)
 					DoorSystemSetAutomaticRate(doorHash, data.doorRate or door.doorRate and 0.0 or 10.0, false, false)
 				end
 
-				DoorSystemSetDoorState(doorHash, doorState, false, false)
+				DoorSystemSetDoorState(doorHash, doorState, false, true)
 
 				if data.holdOpen then DoorSystemSetHoldOpen(doorHash, doorState == 0) end
 			else
-				DoorSystemSetDoorState(doorHash, 4, false, false)
-				DoorSystemSetDoorState(doorHash, 0, false, false)
+				DoorSystemSetDoorState(doorHash, 4, false, true)
+				DoorSystemSetDoorState(doorHash, 0, false, true)
 
 				if double[i].entity then
 					Entity(double[i].entity).state.doorId = nil
@@ -231,12 +249,12 @@ RegisterNetEvent('ox_doorlock:editDoorlock', function(id, data)
 				DoorSystemSetAutomaticRate(door.hash, data.doorRate or door.doorRate and 0.0 or 10.0, false, false)
 			end
 
-			DoorSystemSetDoorState(door.hash, doorState, false, false)
+			DoorSystemSetDoorState(door.hash, doorState, false, true)
 
 			if data.holdOpen then DoorSystemSetHoldOpen(door.hash, doorState == 0) end
 		else
-			DoorSystemSetDoorState(door.hash, 4, false, false)
-			DoorSystemSetDoorState(door.hash, 0, false, false)
+			DoorSystemSetDoorState(door.hash, 4, false, true)
+			DoorSystemSetDoorState(door.hash, 0, false, true)
 
 			if door.entity then
 				Entity(door.entity).state.doorId = nil
