@@ -157,80 +157,20 @@ RegisterNetEvent('ox_doorlock:setState', function(id, state, source, data)
 	door.state = state
 
 	if double then
-		-- Ensure doors are found and use actual entity coordinates
-		for i = 1, 2 do
-			if not double[i].entity and IsModelValid(double[i].model) then
-				local entity = GetClosestObjectOfType(double[i].coords.x, double[i].coords.y, double[i].coords.z, 2.0, double[i].model, false, false, false)
-				if entity ~= 0 then
-					double[i].entity = entity
-					Entity(entity).state.doorId = door.id
-					-- Update coordinates to match actual entity position
-					local entCoords = GetEntityCoords(entity)
-					double[i].coords = vector3(entCoords.x, entCoords.y, entCoords.z)
-				end
-			end
-			
-			-- Use actual entity coordinates if available
-			local doorCoords = double[i].entity and GetEntityCoords(double[i].entity) or double[i].coords
-			
-			-- Re-register doors with actual coordinates
-			AddDoorToSystem(double[i].hash, double[i].model, doorCoords.x, doorCoords.y, doorCoords.z, false, false, false)
-		end
-		
-		-- Set door state with force update and request door control
-		DoorSystemSetDoorState(double[1].hash, door.state, true, true)
-		DoorSystemSetDoorState(double[2].hash, door.state, true, true)
+		DoorSystemSetDoorState(double[1].hash, door.state, false, false)
+		DoorSystemSetDoorState(double[2].hash, door.state, false, false)
 
 		if door.holdOpen then
 			DoorSystemSetHoldOpen(double[1].hash, door.state == 0)
 			DoorSystemSetHoldOpen(double[2].hash, door.state == 0)
 		end
 
-		-- Wait for doors to close if locking
-		if door.state == 1 then
-			local timeout = 0
-			while (not IsDoorClosed(double[1].hash) or not IsDoorClosed(double[2].hash)) and timeout < 1000 do 
-				Wait(0)
-				timeout = timeout + 1
-			end
-			-- Force update again after door closes to ensure it stays locked
-			DoorSystemSetDoorState(double[1].hash, door.state, true, true)
-			DoorSystemSetDoorState(double[2].hash, door.state, true, true)
-		end
+		while door.state == 1 and (not IsDoorClosed(double[1].hash) or not IsDoorClosed(double[2].hash)) do Wait(0) end
 	else
-		-- Ensure door is found and use actual entity coordinates
-		if not door.entity and IsModelValid(door.model) then
-			local entity = GetClosestObjectOfType(door.coords.x, door.coords.y, door.coords.z, 2.0, door.model, false, false, false)
-			if entity ~= 0 then
-				door.entity = entity
-				Entity(entity).state.doorId = door.id
-				-- Update coordinates to match actual entity position
-				local entCoords = GetEntityCoords(entity)
-				door.coords = vector3(entCoords.x, entCoords.y, entCoords.z)
-			end
-		end
-		
-		-- Use actual entity coordinates if available
-		local doorCoords = door.entity and GetEntityCoords(door.entity) or door.coords
-		
-		-- Re-register door with actual coordinates
-		AddDoorToSystem(door.hash, door.model, doorCoords.x, doorCoords.y, doorCoords.z, false, false, false)
-		
-		-- Set door state with force update and request door control
-		DoorSystemSetDoorState(door.hash, door.state, true, true)
+		DoorSystemSetDoorState(door.hash, door.state, false, false)
 
 		if door.holdOpen then DoorSystemSetHoldOpen(door.hash, door.state == 0) end
-		
-		-- Wait for door to close if locking
-		if door.state == 1 then
-			local timeout = 0
-			while not IsDoorClosed(door.hash) and timeout < 1000 do 
-				Wait(0)
-				timeout = timeout + 1
-			end
-			-- Force update again after door closes to ensure it stays locked
-			DoorSystemSetDoorState(door.hash, door.state, true, true)
-		end
+		while door.state == 1 and not IsDoorClosed(door.hash) do Wait(0) end
 	end
 
 	if door.state == state and door.distance and door.distance < 20 then
