@@ -3,6 +3,8 @@ local PlayerJob = nil
 local lastVeh = nil
 local lastPlate = nil
 local PlayerData = {}
+local lastPlateScan = 0
+local plateScanCooldown = 1000 -- 1 second cooldown
 
 local class = {
     [0] = Lang:t('info.class.compact'),
@@ -125,9 +127,20 @@ local function whitelistedVehicle()
 end
 
 RegisterCommand('+platescan', function()
-	if PlayerJob.name ~= "police" then return end
+	-- Early return checks - prevent command from running at all if conditions aren't met
+	local currentTime = GetGameTimer()
+	if currentTime - lastPlateScan < plateScanCooldown then return end
+	
+	-- Check if player job data is loaded and player is police
+	if not PlayerJob or not PlayerJob.name or PlayerJob.name ~= "police" then return end
+	
+	-- Check if player is in a police vehicle
 	if not IsPedInAnyPoliceVehicle(PlayerPedId()) then return end
+	
+	-- Check if phone/menu is active
 	if IsPhoneActive() or IsPauseMenuActive() or IsAimCamActive() then return end
+	
+	lastPlateScan = currentTime
 	local data, vData, vehicle = exports["wk_wars2x"]:GetFrontPlate(), {}
 	if data.veh ~= nil and data.veh ~= 0 then
 		lastVeh = data.veh
