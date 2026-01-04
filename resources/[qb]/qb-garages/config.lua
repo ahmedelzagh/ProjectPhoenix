@@ -106,7 +106,8 @@ Config.WarpPlayerIntoVehicle = false -- True == Will Warp Player Into their vehi
 Config.HouseParkingDrawText = 'Parking' -- text when driving on to the HOUSE parking lot
 Config.ParkingDistance = 2.0 -- Distance to the parking lot when trying to park the vehicle  (Global, can be overriden by each garage)
 Config.SpawnDistance = 4.5 -- The maximum distance you can be from a parking spot, to spawn a car (Global, can be overriden by each garage)
-Config.DepotPrice = 60.0 -- The price to take out a despawned vehicle from impound.
+Config.DepotPrice = 60.0 -- The fallback price to take out a despawned vehicle from impound (used if vehicle price not found)
+Config.DepotPricePercentage = 0.05 -- Percentage of vehicle price to charge for impound (5% = 0.05). Set to 0 to use fixed DepotPrice instead.
 Config.DrawTextPosition = 'left' -- location of drawtext: left, top, right
 
 -- set useVehicleSpawner = true for each garage that has type job and should use the vehicle spawner instead of personal vehicles

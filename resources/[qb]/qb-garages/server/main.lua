@@ -200,7 +200,13 @@ QBCore.Functions.CreateCallback("qb-garage:server:GetGarageVehicles", function(s
                         goto skip
                     end
                     if vehicle.depotprice == 0 then
-                        vehicle.depotprice = Config.DepotPrice
+                        -- Calculate depot price based on vehicle price if percentage is set and vehicle price exists
+                        local vehicleData = QBCore.Shared.Vehicles[vehicle.vehicle]
+                        if Config.DepotPricePercentage > 0 and vehicleData and vehicleData.price then
+                            vehicle.depotprice = math.floor(vehicleData.price * Config.DepotPricePercentage)
+                        else
+                            vehicle.depotprice = Config.DepotPrice
+                        end
                     end
 
                     vehicle.parkingspot = nil
