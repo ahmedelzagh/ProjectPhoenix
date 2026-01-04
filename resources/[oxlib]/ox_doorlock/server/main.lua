@@ -143,7 +143,7 @@ local function createDoor(id, door, name)
 	door.coords = vector3(door.coords.x, door.coords.y, door.coords.z)
 
 	if not door.state then
-		door.state = 1
+		door.state = Config.DefaultDoorState or 0
 	end
 
 	if type(door.items?[1]) == 'string' then
@@ -266,7 +266,12 @@ MySQL.ready(function()
 	elseif result then
 		for i = 1, #result do
 			local door = result[i]
-			createDoor(door.id, json.decode(door.data), door.name)
+			local doorData = json.decode(door.data)
+			-- Force all doors to be unlocked (open) by default
+			doorData.state = 0
+			-- Update database to reflect unlocked state
+			MySQL.update('UPDATE ox_doorlock SET data = ? WHERE id = ?', { json.encode(doorData), door.id })
+			createDoor(door.id, doorData, door.name)
 		end
 	end
 

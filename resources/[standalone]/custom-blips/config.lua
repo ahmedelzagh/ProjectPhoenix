@@ -20,34 +20,34 @@ Config.Blips = {
     {
         name = "House Grove",
         coords = vector3(-162.59, -1642.26, 34.13),
-        sprite = 84,      -- House icon
+        sprite = 50,      -- Generic location icon (less intrusive)
         color = 2,        -- Green (Families color)
-        scale = 0.8,
-        shortRange = false
+        scale = 0.6,
+        shortRange = true  -- Only show when close/zoomed in
     },
     {
         name = "House Ballas",
         coords = vector3(84.19, -1962.47, 21.13),
-        sprite = 84,      -- House icon
+        sprite = 50,      -- Generic location icon (less intrusive)
         color = 27,       -- Purple (Ballas color)
-        scale = 0.8,
-        shortRange = false
+        scale = 0.6,
+        shortRange = true  -- Only show when close/zoomed in
     },
     {
         name = "House Vagos",
         coords = vector3(357.79, -1989.48, 24.28),
-        sprite = 84,      -- House icon
+        sprite = 50,      -- Generic location icon (less intrusive)
         color = 46,       -- Yellow (Vagos color)
-        scale = 0.8,
-        shortRange = false
+        scale = 0.6,
+        shortRange = true  -- Only show when close/zoomed in
     },
     {
         name = "Lost HQ",
         coords = vector3(982.73, -104.22, 74.85),
-        sprite = 84,      -- House icon
+        sprite = 50,      -- Generic location icon (less intrusive)
         color = 1,        -- Red (Lost MC color)
-        scale = 0.8,
-        shortRange = false
+        scale = 0.6,
+        shortRange = true  -- Only show when close/zoomed in
     },
     
     -- Gabz MLO Locations
