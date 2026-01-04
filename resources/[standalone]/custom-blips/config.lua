@@ -108,14 +108,6 @@ Config.Blips = {
         shortRange = true
     },
     {
-        name = "PDM",
-        coords = vector3(-48.21, -1105.48, 27.26),
-        sprite = 225,     -- Car icon
-        color = 3,        -- Blue
-        scale = 0.7,
-        shortRange = false
-    },
-    {
         name = "Bennys",
         coords = vector3(-47.53, -1042.61, 28.35),
         sprite = 72,      -- Garage icon
