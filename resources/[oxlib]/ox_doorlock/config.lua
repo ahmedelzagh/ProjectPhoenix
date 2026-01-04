@@ -25,3 +25,6 @@ Config.LockDifficulty = { 'easy', 'easy', 'medium' }
 
 -- Allow lockpicks to be used to lock an already unlocked door.
 Config.CanPickUnlockedDoors = false
+
+-- Default door state when creating new doors (0 = unlocked/open, 1 = locked/closed)
+Config.DefaultDoorState = 0
