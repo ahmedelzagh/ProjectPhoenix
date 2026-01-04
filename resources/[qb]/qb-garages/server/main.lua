@@ -202,11 +202,15 @@ QBCore.Functions.CreateCallback("qb-garage:server:GetGarageVehicles", function(s
                     if vehicle.depotprice == 0 then
                         -- Calculate depot price based on vehicle price if percentage is set and vehicle price exists
                         local vehicleData = QBCore.Shared.Vehicles[vehicle.vehicle]
+                        local calculatedPrice
                         if Config.DepotPricePercentage > 0 and vehicleData and vehicleData.price then
-                            vehicle.depotprice = math.floor(vehicleData.price * Config.DepotPricePercentage)
+                            calculatedPrice = math.floor(vehicleData.price * Config.DepotPricePercentage)
                         else
-                            vehicle.depotprice = Config.DepotPrice
+                            calculatedPrice = Config.DepotPrice
                         end
+                        vehicle.depotprice = calculatedPrice
+                        -- Save calculated price to database
+                        MySQL.update('UPDATE player_vehicles SET depotprice = ? WHERE plate = ?', {calculatedPrice, vehicle.plate})
                     end
 
                     vehicle.parkingspot = nil
@@ -372,7 +376,21 @@ RegisterNetEvent('qb-garage:server:PayDepotPrice', function(data)
      MySQL.query('SELECT * FROM player_vehicles WHERE plate = ?', {vehicle.plate}, function(result)
         if result[1] then
             local vehicle = result[1]
-            local depotPrice = vehicle.depotprice ~= 0 and vehicle.depotprice or Config.DepotPrice
+            local depotPrice
+            if vehicle.depotprice ~= 0 then
+                depotPrice = vehicle.depotprice
+            else
+                -- Calculate depot price if not set in database
+                local vehicleData = QBCore.Shared.Vehicles[vehicle.vehicle]
+                if Config.DepotPricePercentage > 0 and vehicleData and vehicleData.price then
+                    depotPrice = math.floor(vehicleData.price * Config.DepotPricePercentage)
+                else
+                    depotPrice = Config.DepotPrice
+                end
+                -- Save calculated price to database for future use
+                MySQL.update('UPDATE player_vehicles SET depotprice = ? WHERE plate = ?', {depotPrice, vehicle.plate})
+            end
+            
             if cashBalance >= depotPrice then
                 Player.Functions.RemoveMoney("cash", depotPrice, "paid-depot")
             elseif bankBalance >= depotPrice then
