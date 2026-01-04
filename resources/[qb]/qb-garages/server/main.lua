@@ -199,15 +199,16 @@ QBCore.Functions.CreateCallback("qb-garage:server:GetGarageVehicles", function(s
                     if GetVehicleByPlate(vehicle.plate) or not QBCore.Shared.Vehicles[vehicle.vehicle] then
                         goto skip
                     end
-                    if vehicle.depotprice == 0 then
-                        -- Calculate depot price based on vehicle price if percentage is set and vehicle price exists
-                        local vehicleData = QBCore.Shared.Vehicles[vehicle.vehicle]
-                        local calculatedPrice
-                        if Config.DepotPricePercentage > 0 and vehicleData and vehicleData.price then
-                            calculatedPrice = math.floor(vehicleData.price * Config.DepotPricePercentage)
-                        else
-                            calculatedPrice = Config.DepotPrice
-                        end
+                    -- Always recalculate depot price to match current config percentage
+                    local vehicleData = QBCore.Shared.Vehicles[vehicle.vehicle]
+                    local calculatedPrice
+                    if Config.DepotPricePercentage > 0 and vehicleData and vehicleData.price then
+                        calculatedPrice = math.floor(vehicleData.price * Config.DepotPricePercentage)
+                    else
+                        calculatedPrice = Config.DepotPrice
+                    end
+                    -- Only update if price changed or was 0
+                    if vehicle.depotprice ~= calculatedPrice then
                         vehicle.depotprice = calculatedPrice
                         -- Save calculated price to database
                         MySQL.update('UPDATE player_vehicles SET depotprice = ? WHERE plate = ?', {calculatedPrice, vehicle.plate})
