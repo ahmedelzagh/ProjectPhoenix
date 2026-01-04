@@ -157,12 +157,27 @@ RegisterNetEvent('ox_doorlock:setState', function(id, state, source, data)
 	door.state = state
 
 	if double then
-		-- Re-register doors to ensure they're properly initialized
+		-- Ensure doors are found and use actual entity coordinates
 		for i = 1, 2 do
-			AddDoorToSystem(double[i].hash, double[i].model, double[i].coords.x, double[i].coords.y, double[i].coords.z, false, false, false)
+			if not double[i].entity and IsModelValid(double[i].model) then
+				local entity = GetClosestObjectOfType(double[i].coords.x, double[i].coords.y, double[i].coords.z, 2.0, double[i].model, false, false, false)
+				if entity ~= 0 then
+					double[i].entity = entity
+					Entity(entity).state.doorId = door.id
+					-- Update coordinates to match actual entity position
+					local entCoords = GetEntityCoords(entity)
+					double[i].coords = vector3(entCoords.x, entCoords.y, entCoords.z)
+				end
+			end
+			
+			-- Use actual entity coordinates if available
+			local doorCoords = double[i].entity and GetEntityCoords(double[i].entity) or double[i].coords
+			
+			-- Re-register doors with actual coordinates
+			AddDoorToSystem(double[i].hash, double[i].model, doorCoords.x, doorCoords.y, doorCoords.z, false, false, false)
 		end
 		
-		-- Set door state with force update
+		-- Set door state with force update and request door control
 		DoorSystemSetDoorState(double[1].hash, door.state, true, true)
 		DoorSystemSetDoorState(double[2].hash, door.state, true, true)
 
@@ -183,8 +198,23 @@ RegisterNetEvent('ox_doorlock:setState', function(id, state, source, data)
 			DoorSystemSetDoorState(double[2].hash, door.state, true, true)
 		end
 	else
-		-- Re-register door to ensure it's properly initialized
-		AddDoorToSystem(door.hash, door.model, door.coords.x, door.coords.y, door.coords.z, false, false, false)
+		-- Ensure door is found and use actual entity coordinates
+		if not door.entity and IsModelValid(door.model) then
+			local entity = GetClosestObjectOfType(door.coords.x, door.coords.y, door.coords.z, 2.0, door.model, false, false, false)
+			if entity ~= 0 then
+				door.entity = entity
+				Entity(entity).state.doorId = door.id
+				-- Update coordinates to match actual entity position
+				local entCoords = GetEntityCoords(entity)
+				door.coords = vector3(entCoords.x, entCoords.y, entCoords.z)
+			end
+		end
+		
+		-- Use actual entity coordinates if available
+		local doorCoords = door.entity and GetEntityCoords(door.entity) or door.coords
+		
+		-- Re-register door with actual coordinates
+		AddDoorToSystem(door.hash, door.model, doorCoords.x, doorCoords.y, doorCoords.z, false, false, false)
 		
 		-- Set door state with force update and request door control
 		DoorSystemSetDoorState(door.hash, door.state, true, true)
