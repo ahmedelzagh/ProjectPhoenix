@@ -186,17 +186,20 @@ CreateThread(function()
                     end
 
                     if IsControlJustPressed(0, 47) and not emsNotified then
+                        -- Set emsNotified immediately to prevent spam clicking
+                        emsNotified = true
+                        
                         QBCore.Functions.TriggerCallback('hhfw:docOnline', function(EMSOnline, hasEnoughMoney)
                             if EMSOnline <= 0 and hasEnoughMoney then
                                 exports["hh_aidoc"]:sendAiDoctor()
                                 TriggerServerEvent('hospital:server:ambulanceAlert', Lang:t('info.civ_down'))
-                                emsNotified = true
                             else
                                 if EMSOnline > 0 then
                                     TriggerServerEvent('hospital:server:ambulanceAlert', Lang:t('info.civ_down'))
-                                    emsNotified = true
                                 elseif not hasEnoughMoney then
                                     Notify("Not Enough Money, you will have to wait to see nancy.", "error")
+                                    -- Reset emsNotified if request failed due to money
+                                    emsNotified = false
                                 end	
                             end
                         end)

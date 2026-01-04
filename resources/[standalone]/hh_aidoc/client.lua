@@ -4,33 +4,68 @@ local Active = false
 local test = nil
 local test1 = nil
 local spam = true
+local lastRequestTime = 0
+local cooldownTime = 30000 -- 30 seconds cooldown in milliseconds
 
   
 
 
 RegisterCommand("help", function(source, args, raw)
-	if (QBCore.Functions.GetPlayerData().metadata["isdead"]) or (QBCore.Functions.GetPlayerData().metadata["inlaststand"]) and spam then
-		QBCore.Functions.TriggerCallback('hhfw:docOnline', function(EMSOnline, hasEnoughMoney)
-			if EMSOnline <= Config.Doctor and hasEnoughMoney and spam then
-				SpawnVehicle(GetEntityCoords(PlayerPedId()))
-				TriggerServerEvent('hhfw:charge')
-				Notify("Medic is arriving")
-			else
-				if EMSOnline > Config.Doctor then
-					Notify("There is too many medics online", "error")
-				elseif not hasEnoughMoney then
-					Notify("Not Enough Money", "error")
-				else
-					Notify("Wait Paramadic is on its Way", "primary")
-				end	
-			end
-		end)
-	else
+	local currentTime = GetGameTimer()
+	local playerData = QBCore.Functions.GetPlayerData()
+	local isDead = playerData.metadata["isdead"]
+	local inLastStand = playerData.metadata["inlaststand"]
+	
+	-- Check if player is dead or in last stand
+	if not isDead and not inLastStand then
 		Notify("This can only be used when dead", "error")
+		return
 	end
+	
+	-- Check cooldown
+	if not spam or (currentTime - lastRequestTime) < cooldownTime then
+		local remainingTime = math.ceil((cooldownTime - (currentTime - lastRequestTime)) / 1000)
+		Notify("Please wait " .. remainingTime .. " seconds before requesting EMS again", "error")
+		return
+	end
+	
+	-- Set spam protection immediately
+	spam = false
+	lastRequestTime = currentTime
+	
+	QBCore.Functions.TriggerCallback('hhfw:docOnline', function(EMSOnline, hasEnoughMoney)
+		if EMSOnline <= Config.Doctor and hasEnoughMoney then
+			SpawnVehicle(GetEntityCoords(PlayerPedId()))
+			TriggerServerEvent('hhfw:charge')
+			Notify("Medic is arriving")
+		else
+			-- Reset spam if request failed
+			spam = true
+			if EMSOnline > Config.Doctor then
+				Notify("There is too many medics online", "error")
+			elseif not hasEnoughMoney then
+				Notify("Not Enough Money", "error")
+			else
+				Notify("Wait Paramadic is on its Way", "primary")
+			end	
+		end
+	end)
 end)
 
 function sendAiDoctor()
+	local currentTime = GetGameTimer()
+	
+	-- Check cooldown
+	if not spam or (currentTime - lastRequestTime) < cooldownTime then
+		local remainingTime = math.ceil((cooldownTime - (currentTime - lastRequestTime)) / 1000)
+		Notify("Please wait " .. remainingTime .. " seconds before requesting EMS again", "error")
+		return
+	end
+	
+	-- Set spam protection immediately
+	spam = false
+	lastRequestTime = currentTime
+	
 	SpawnVehicle(GetEntityCoords(PlayerPedId()))
 	TriggerServerEvent('hhfw:charge')
 	Notify("Medic is arriving")
@@ -41,8 +76,7 @@ exports("sendAiDoctor", sendAiDoctor)
 
 
 
-function SpawnVehicle(x, y, z)  
-	spam = false
+function SpawnVehicle(x, y, z)
 	local vehhash = GetHashKey("ambulance")                                                     
 	local loc = GetEntityCoords(PlayerPedId())
 	RequestModel(vehhash)
@@ -126,6 +160,8 @@ function DoctorNPC()
 		DeleteEntity(test)
 		Wait(5000)
 		DeleteEntity(test1)
+		-- Reset spam after cooldown period
+		Wait(cooldownTime)
 		spam = true
 	end)
 end
