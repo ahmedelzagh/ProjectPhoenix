@@ -115,7 +115,14 @@ Config.Blips = {
         scale = 0.7,
         shortRange = true
     },
-    -- Impound removed - already handled by qb-garages
+    {
+        name = "Impound",
+        coords = vector3(-143.15, -1175.06, 23.77),
+        sprite = 50,      -- Impound icon
+        color = 1,        -- Red
+        scale = 0.7,
+        shortRange = true
+    },
     {
         name = "LS Customs",
         coords = vector3(723.12, -1088.83, 23.23),
