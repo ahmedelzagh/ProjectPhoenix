@@ -157,20 +157,38 @@ RegisterNetEvent('ox_doorlock:setState', function(id, state, source, data)
 	door.state = state
 
 	if double then
-		DoorSystemSetDoorState(double[1].hash, door.state, false, false)
-		DoorSystemSetDoorState(double[2].hash, door.state, false, false)
+		-- Force update door state (third parameter = forceUpdate)
+		DoorSystemSetDoorState(double[1].hash, door.state, true, false)
+		DoorSystemSetDoorState(double[2].hash, door.state, true, false)
 
 		if door.holdOpen then
 			DoorSystemSetHoldOpen(double[1].hash, door.state == 0)
 			DoorSystemSetHoldOpen(double[2].hash, door.state == 0)
 		end
 
-		while door.state == 1 and (not IsDoorClosed(double[1].hash) or not IsDoorClosed(double[2].hash)) do Wait(0) end
+		-- Wait for doors to close if locking
+		if door.state == 1 then
+			while not IsDoorClosed(double[1].hash) or not IsDoorClosed(double[2].hash) do 
+				Wait(0) 
+			end
+			-- Force update again after door closes to ensure it stays locked
+			DoorSystemSetDoorState(double[1].hash, door.state, true, false)
+			DoorSystemSetDoorState(double[2].hash, door.state, true, false)
+		end
 	else
-		DoorSystemSetDoorState(door.hash, door.state, false, false)
+		-- Force update door state (third parameter = forceUpdate)
+		DoorSystemSetDoorState(door.hash, door.state, true, false)
 
 		if door.holdOpen then DoorSystemSetHoldOpen(door.hash, door.state == 0) end
-		while door.state == 1 and not IsDoorClosed(door.hash) do Wait(0) end
+		
+		-- Wait for door to close if locking
+		if door.state == 1 then
+			while not IsDoorClosed(door.hash) do 
+				Wait(0) 
+			end
+			-- Force update again after door closes to ensure it stays locked
+			DoorSystemSetDoorState(door.hash, door.state, true, false)
+		end
 	end
 
 	if door.state == state and door.distance and door.distance < 20 then
