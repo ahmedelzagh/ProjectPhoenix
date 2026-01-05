@@ -42,7 +42,6 @@ RegisterNetEvent("ps-camera:savePhoto", function(url, streetName)
     if not player then return end
 
     local location = streetName
-    local playerName = player.PlayerData.charinfo.firstname .. " " .. player.PlayerData.charinfo.lastname
 
     local info = {
         ps_image = url,
@@ -65,22 +64,6 @@ RegisterNetEvent("ps-camera:savePhoto", function(url, streetName)
 
         ox_inventory:AddItem(source, "photo", 1, info)
         
-    end
-    
-    -- Send Discord notification with photographer name
-    if Config.webhook and Config.webhook ~= '' then
-        local embedData = {
-            {
-                ['title'] = "Photo Taken",
-                ['color'] = 3447003,
-                ['description'] = "**Photographer:** " .. playerName .. "\n**Location:** " .. location,
-                ['image'] = {
-                    ['url'] = url
-                },
-                ['timestamp'] = os.date("!%Y-%m-%dT%H:%M:%SZ")
-            }
-        }
-        PerformHttpRequest(Config.webhook, function() end, 'POST', json.encode({username = 'PS Camera', embeds = embedData}), { ['Content-Type'] = 'application/json' })
     end
     
     if Config.UsePsMDT then
