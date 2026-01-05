@@ -3,10 +3,11 @@ Config = {}
 -- NPC Vehicle Lock States
 Config.LockNPCDrivingCars = false -- Lock state for NPC cars being driven by NPCs [true = locked, false = unlocked]
 Config.LockNPCParkedCars = false -- Lock state for NPC parked cars [true = locked, false = unlocked]
+Config.RandomNPCLockChance = 0.25 -- Chance for NPC/parked cars to be locked (0.25 = 25%). Set to 0 to disable random locking.
 Config.UseKeyfob = false -- you can set this true if you dont need ui
 -- Lockpick Settings
-Config.RemoveLockpickNormal = 0.5 -- Chance to remove lockpick on fail
-Config.RemoveLockpickAdvanced = 0.2 -- Chance to remove advanced lockpick on fail
+Config.RemoveLockpickOnFail = true -- Always remove lockpick when lockpicking fails (it breaks)
+Config.RemoveLockpickOnSuccess = 0.3 -- Chance to remove lockpick on success (0.3 = 30% chance to break, 70% chance to keep)
 
 -- Carjack Settings
 Config.CarJackEnable = true -- True allows for the ability to car jack peds.

@@ -55,8 +55,21 @@ local function robKeyLoop()
                         elseif Config.LockNPCDrivingCars then
                             TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), 2)
                         else
-                            TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), 1)
-                            TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
+                            local lockState = 1 -- Default to unlocked
+                            
+                            -- Random chance to lock NPC driving cars (25% by default)
+                            if Config.RandomNPCLockChance > 0 then
+                                if math.random() <= Config.RandomNPCLockChance then
+                                    lockState = 2 -- Locked
+                                end
+                            end
+                            
+                            TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), lockState)
+                            
+                            -- Only give keys if car is unlocked
+                            if lockState == 1 then
+                                TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
+                            end
 
                             --Make passengers flee
                             local pedsInVehicle = GetPedsInVehicle(entering)
@@ -70,11 +83,19 @@ local function robKeyLoop()
                     elseif driver == 0 and entering ~= lastPickedVehicle and not HasKeys(plate) and not isTakingKeys then
                         QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:checkPlayerOwned', function(playerOwned)
                             if not playerOwned then
+                                local lockState = 1 -- Default to unlocked
+                                
                                 if Config.LockNPCParkedCars then
-                                    TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), 2)
-                                else
-                                    TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), 1)
+                                    -- Config says all parked cars should be locked
+                                    lockState = 2
+                                elseif Config.RandomNPCLockChance > 0 then
+                                    -- Random chance to lock (25% by default)
+                                    if math.random() <= Config.RandomNPCLockChance then
+                                        lockState = 2 -- Locked
+                                    end
                                 end
+                                
+                                TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), lockState)
                             end
                         end, plate)
 
@@ -91,10 +112,10 @@ local function robKeyLoop()
                         sleep = 0
 
                         local vehiclePos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0, 1.0, 0.5)
-                        DrawText3D(vehiclePos.x, vehiclePos.y, vehiclePos.z, Lang:t("info.skeys"))
+                        DrawText3D(vehiclePos.x, vehiclePos.y, vehiclePos.z, Lang:t("info.hotwire"))
                         SetVehicleEngineOn(vehicle, false, false, true)
 
-                        if IsControlJustPressed(0, 74) then
+                        if IsControlJustPressed(0, 38) then -- E key (38) instead of H (74)
                             Hotwire(vehicle, plate)
                         end
                     end
@@ -277,13 +298,15 @@ RegisterNetEvent('weapons:client:DrawWeapon', function()
     robKeyLoop()
 end)
 
-
 RegisterNetEvent('lockpicks:UseLockpick', function(isAdvanced)
-    if exports['qb-config']:isPaidEnabled("avScripts") then
-        if exports['av_boosting']:isBoosting() then 
-            return 
-        end
-    end
+    -- If you use av_boosting and want to block lockpicks during boosting,
+    -- you can re‑enable this integration. For now it's disabled to avoid
+    -- export errors when av_boosting is not running.
+    -- if GetResourceState('av_boosting') == 'started' and exports['qb-config']:isPaidEnabled("avScripts") then
+    --     if exports['av_boosting']:isBoosting() then 
+    --         return 
+    --     end
+    -- end
     LockpickDoor(isAdvanced)
 end)
 -- Backwards Compatibility ONLY -- Remove at some point --
@@ -579,45 +602,58 @@ function IsBlacklistedWeapon()
     return false
 end
 
-function LockpickDoor(isAdvanced)
+function LockpickDoor(isAdvanced, vehicle)
     local ped = PlayerPedId()
-    local pos = GetEntityCoords(ped)
-    local vehicle = QBCore.Functions.GetClosestVehicle()
-
-    if vehicle == nil or vehicle == 0 then return end
-    if HasKeys(QBCore.Functions.GetPlate(vehicle)) then return end
-    if #(pos - GetEntityCoords(vehicle)) > 2.5 then return end
-    if GetVehicleDoorLockStatus(vehicle) <= 0 then return end
-
-    usingAdvanced = isAdvanced
-    loadAnimDict("veh@break_in@0h@p_m_one@")
-    if usingAdvanced then
-        TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
-        exports['ps-ui']:Circle(function(success)
-            if success then
-                print("success")
-            else
-                print("fail")
-            end
-            lockpickFinish(success)
-        end, 2, 20) -- NumberOfCircles, MS
-    else
-        TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
-        exports['ps-ui']:Circle(function(success)
-            if success then
-                print("success")
-            else
-                print("fail")
-            end
-            lockpickFinish(success)
-        end, 4, 10) -- NumberOfCircles, MS
+    
+    -- Advanced lockpick not used for vehicles
+    if isAdvanced then
+        QBCore.Functions.Notify("Advanced lockpick cannot be used on vehicles", "error")
+        return
     end
+    
+    -- If vehicle is not provided, get closest vehicle
+    if not vehicle then
+        local pos = GetEntityCoords(ped)
+        vehicle = QBCore.Functions.GetClosestVehicle()
+        
+        if vehicle == nil or vehicle == 0 then 
+            QBCore.Functions.Notify("No vehicle nearby", "error")
+            return 
+        end
+        if #(pos - GetEntityCoords(vehicle)) > 2.5 then 
+            QBCore.Functions.Notify("Vehicle too far away", "error")
+            return 
+        end
+    end
+    
+    if vehicle == nil or vehicle == 0 then return end
+    
+    local plate = QBCore.Functions.GetPlate(vehicle)
+    if HasKeys(plate) then 
+        QBCore.Functions.Notify("You already have keys to this vehicle", "error")
+        return 
+    end
+    
+    local lockStatus = GetVehicleDoorLockStatus(vehicle)
+    if lockStatus <= 1 then 
+        QBCore.Functions.Notify("This vehicle is already unlocked", "error")
+        return 
+    end
+
+    loadAnimDict("veh@break_in@0h@p_m_one@")
+    TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
+    exports['ps-ui']:Circle(function(success)
+        lockpickFinish(success, vehicle)
+    end, 4, 10) -- NumberOfCircles, MS
 end
 
-function lockpickFinish(success)
-    local vehicle = QBCore.Functions.GetClosestVehicle()
+function lockpickFinish(success, vehicle)
+    if not vehicle then
+        vehicle = QBCore.Functions.GetClosestVehicle()
+    end
+    
+    if not vehicle or vehicle == 0 then return end
 
-    local chance = math.random()
     if success then
         TriggerServerEvent('hud:server:GainStress', math.random(1, 4))
         lastPickedVehicle = vehicle
@@ -629,56 +665,56 @@ function lockpickFinish(success)
             TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(vehicle), 1)
         end
 
+        -- On success: chance to break lockpick (default 30% chance to break, 70% to keep)
+        if Config.RemoveLockpickOnSuccess > 0 then
+            local chance = math.random()
+            if chance <= Config.RemoveLockpickOnSuccess then
+                TriggerServerEvent("qb-vehiclekeys:server:breakLockpick", "lockpick")
+            end
+        end
     else
         TriggerServerEvent('hud:server:GainStress', math.random(1, 4))
         AttemptPoliceAlert("steal")
-    end
-
-    if usingAdvanced then
-        if chance <= Config.RemoveLockpickAdvanced then
-            TriggerServerEvent("qb-vehiclekeys:server:breakLockpick", "advancedlockpick")
-        end
-    else
-        if chance <= Config.RemoveLockpickNormal then
+        
+        -- On failure: always remove lockpick (it breaks)
+        if Config.RemoveLockpickOnFail then
             TriggerServerEvent("qb-vehiclekeys:server:breakLockpick", "lockpick")
         end
     end
 end
 
 function Hotwire(vehicle, plate)
-    local hotwireTime = math.random(Config.minHotwireTime, Config.maxHotwireTime)
     local ped = PlayerPedId()
     IsHotwiring = true
 
     SetVehicleAlarm(vehicle, true)
-    SetVehicleAlarmTimeLeft(vehicle, hotwireTime)
-    QBCore.Functions.Progressbar("hotwire_vehicle", Lang:t("progress.hskeys"), hotwireTime, false, true, {
-        disableMovement = true,
-        disableCarMovement = true,
-        disableMouse = false,
-        disableCombat = true
-    }, {
-        animDict = "anim@amb@clubhouse@tutorial@bkr_tut_ig3@",
-        anim = "machinic_loop_mechandplayer",
-        flags = 16
-    }, {}, {}, function() -- Done
+    SetVehicleAlarmTimeLeft(vehicle, 30000) -- Set alarm for 30 seconds
+    
+    -- Play hotwire animation
+    loadAnimDict("anim@amb@clubhouse@tutorial@bkr_tut_ig3@")
+    TaskPlayAnim(ped, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
+    
+    -- Use Circle minigame instead of random chance
+    exports['ps-ui']:Circle(function(success)
         StopAnimTask(ped, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer", 1.0)
         TriggerServerEvent('hud:server:GainStress', math.random(1, 4))
-        if (math.random() <= Config.HotwireChance) then
+        
+        if success then
+            -- Circle minigame solved successfully - hotwire successful, give keys
+            -- Server will send "You get keys to the vehicle!" notification via GiveKeys function
             TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
         else
-            QBCore.Functions.Notify(Lang:t("notify.fvlockpick"), "error")
+            -- Circle minigame failed - hotwire failed
+            QBCore.Functions.Notify(Lang:t("notify.hotwire_fail"), "error")
         end
+        
         Wait(Config.TimeBetweenHotwires)
         IsHotwiring = false
-    end, function() -- Cancel
-        StopAnimTask(ped, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer", 1.0)
-        IsHotwiring = false
-    end)
+    end, 3, 15) -- NumberOfCircles, MS
+    
     SetTimeout(10000, function()
         AttemptPoliceAlert("steal")
     end)
-    IsHotwiring = false
 end
 function CarjackVehicle(target)
     if not Config.CarJackEnable then return end
@@ -804,7 +840,126 @@ RegisterNUICallback('trunk', function()
     ToggleVehicleTrunk(GetVehicle())
 	SetNuiFocus(false, false)
 end)
+
+-----------------------
+----   Target System Integration   ----
+-----------------------
+-- Add lockpick option to vehicles via target system
+CreateThread(function()
+    -- Wait for resources to be ready
+    Wait(1000)
+    
+    local target
+    
+    -- Check which target system is available
+    if GetResourceState('ox_target'):find('start') then
+        target = {
+            ox = true,
+            exp = exports.ox_target
+        }
+    elseif GetResourceState('qb-target'):find('start') then
+        target = {
+            qb = true,
+            exp = exports['qb-target']
+        }
+    end
+    
+    if not target then 
+        print("^1[qb-vehiclekeys] No target system found! Please ensure ox_target or qb-target is running.^0")
+        return 
+    end
+    
+    -- Function to check if vehicle can be lockpicked
+    local function canLockpickVehicle(entity)
+        if not entity or entity == 0 then return false end
+        if not DoesEntityExist(entity) then return false end
+        if not IsEntityAVehicle(entity) then return false end
+        
+        local ped = PlayerPedId()
+        local pos = GetEntityCoords(ped)
+        local vehiclePos = GetEntityCoords(entity)
+        
+        -- Check distance
+        if #(pos - vehiclePos) > 2.5 then return false end
+        
+        -- Check if already has keys
+        local plate = QBCore.Functions.GetPlate(entity)
+        if HasKeys(plate) then return false end
+        
+        -- Check if vehicle is locked (0 = unlocked, 1 = unlocked, 2+ = locked)
+        local lockStatus = GetVehicleDoorLockStatus(entity)
+        if lockStatus <= 1 then return false end -- Only allow lockpicking if locked (status 2 or higher)
+        
+        -- Item check is handled by target system's item parameter, but we verify here too
+        return true
+    end
+    
+    -- Function to lockpick vehicle
+    local function lockpickVehicle(data)
+        local vehicle = data.entity or data
+        if not vehicle or vehicle == 0 then return end
+        
+        -- Verify vehicle is still valid and locked
+        if not DoesEntityExist(vehicle) or not IsEntityAVehicle(vehicle) then return end
+        
+        local plate = QBCore.Functions.GetPlate(vehicle)
+        if HasKeys(plate) then 
+            QBCore.Functions.Notify("You already have keys to this vehicle", "error")
+            return 
+        end
+        
+        if GetVehicleDoorLockStatus(vehicle) <= 1 then
+            QBCore.Functions.Notify("This vehicle is already unlocked", "error")
+            return
+        end
+        
+        -- Only use regular lockpick for vehicles (advanced lockpick removed)
+        LockpickDoor(false, vehicle)
+    end
+    
+    if target.ox then
+        -- ox_target integration - only regular lockpick for vehicles
+        local options = {
+            {
+                name = 'lockpickVehicle',
+                label = 'Lockpick Vehicle',
+                icon = 'fas fa-lock',
+                bones = { 'door_dside_f', 'door_dside_r', 'door_pside_f', 'door_pside_r' },
+                onSelect = lockpickVehicle,
+                canInteract = canLockpickVehicle,
+                items = 'lockpick',
+                distance = 2.5
+            }
+        }
+        exports.ox_target:addGlobalVehicle(options)
+        print("^2[qb-vehiclekeys] Lockpick option added to vehicles via ox_target^0")
+    else
+        -- qb-target integration - use door bones, only regular lockpick
+        local bones = {
+            "door_dside_f",
+            "door_dside_r",
+            "door_pside_f",
+            "door_pside_r"
+        }
+        exports['qb-target']:AddTargetBone(bones, {
+            options = {
+                {
+                    num = 1,
+                    type = "client",
+                    icon = "fas fa-lock",
+                    label = "Lockpick Vehicle",
+                    action = lockpickVehicle,
+                    canInteract = canLockpickVehicle,
+                    item = 'lockpick'
+                }
+            },
+            distance = 2.5
+        })
+        print("^2[qb-vehiclekeys] Lockpick option added to vehicles via qb-target^0")
+    end
+end)
 RegisterNUICallback('engine', function()
     ToggleEngine(GetVehicle())
 	SetNuiFocus(false, false)
 end)
+
