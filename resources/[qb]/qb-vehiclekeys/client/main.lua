@@ -605,6 +605,12 @@ end
 function LockpickDoor(isAdvanced, vehicle)
     local ped = PlayerPedId()
     
+    -- Advanced lockpick not used for vehicles
+    if isAdvanced then
+        QBCore.Functions.Notify("Advanced lockpick cannot be used on vehicles", "error")
+        return
+    end
+    
     -- If vehicle is not provided, get closest vehicle
     if not vehicle then
         local pos = GetEntityCoords(ped)
@@ -634,19 +640,11 @@ function LockpickDoor(isAdvanced, vehicle)
         return 
     end
 
-    usingAdvanced = isAdvanced
     loadAnimDict("veh@break_in@0h@p_m_one@")
-    if usingAdvanced then
-        TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
-        exports['ps-ui']:Circle(function(success)
-            lockpickFinish(success, vehicle)
-        end, 2, 20) -- NumberOfCircles, MS
-    else
-        TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
-        exports['ps-ui']:Circle(function(success)
-            lockpickFinish(success, vehicle)
-        end, 4, 10) -- NumberOfCircles, MS
-    end
+    TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
+    exports['ps-ui']:Circle(function(success)
+        lockpickFinish(success, vehicle)
+    end, 4, 10) -- NumberOfCircles, MS
 end
 
 function lockpickFinish(success, vehicle)
@@ -656,7 +654,6 @@ function lockpickFinish(success, vehicle)
     
     if not vehicle or vehicle == 0 then return end
 
-    local chance = math.random()
     if success then
         TriggerServerEvent('hud:server:GainStress', math.random(1, 4))
         lastPickedVehicle = vehicle
@@ -668,17 +665,19 @@ function lockpickFinish(success, vehicle)
             TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(vehicle), 1)
         end
 
+        -- On success: chance to break lockpick (default 30% chance to break, 70% to keep)
+        if Config.RemoveLockpickOnSuccess > 0 then
+            local chance = math.random()
+            if chance <= Config.RemoveLockpickOnSuccess then
+                TriggerServerEvent("qb-vehiclekeys:server:breakLockpick", "lockpick")
+            end
+        end
     else
         TriggerServerEvent('hud:server:GainStress', math.random(1, 4))
         AttemptPoliceAlert("steal")
-    end
-
-    if usingAdvanced then
-        if chance <= Config.RemoveLockpickAdvanced then
-            TriggerServerEvent("qb-vehiclekeys:server:breakLockpick", "advancedlockpick")
-        end
-    else
-        if chance <= Config.RemoveLockpickNormal then
+        
+        -- On failure: always remove lockpick (it breaks)
+        if Config.RemoveLockpickOnFail then
             TriggerServerEvent("qb-vehiclekeys:server:breakLockpick", "lockpick")
         end
     end
@@ -914,12 +913,12 @@ CreateThread(function()
             return
         end
         
-        local hasAdvanced = QBCore.Functions.HasItem('advancedlockpick')
-        LockpickDoor(hasAdvanced, vehicle)
+        -- Only use regular lockpick for vehicles (advanced lockpick removed)
+        LockpickDoor(false, vehicle)
     end
     
     if target.ox then
-        -- ox_target integration - add options for both lockpick types
+        -- ox_target integration - only regular lockpick for vehicles
         local options = {
             {
                 name = 'lockpickVehicle',
@@ -930,22 +929,12 @@ CreateThread(function()
                 canInteract = canLockpickVehicle,
                 items = 'lockpick',
                 distance = 2.5
-            },
-            {
-                name = 'advancedLockpickVehicle',
-                label = 'Advanced Lockpick Vehicle',
-                icon = 'fas fa-lock',
-                bones = { 'door_dside_f', 'door_dside_r', 'door_pside_f', 'door_pside_r' },
-                onSelect = lockpickVehicle,
-                canInteract = canLockpickVehicle,
-                items = 'advancedlockpick',
-                distance = 2.5
             }
         }
         exports.ox_target:addGlobalVehicle(options)
         print("^2[qb-vehiclekeys] Lockpick option added to vehicles via ox_target^0")
     else
-        -- qb-target integration - use door bones
+        -- qb-target integration - use door bones, only regular lockpick
         local bones = {
             "door_dside_f",
             "door_dside_r",
@@ -962,15 +951,6 @@ CreateThread(function()
                     action = lockpickVehicle,
                     canInteract = canLockpickVehicle,
                     item = 'lockpick'
-                },
-                {
-                    num = 2,
-                    type = "client",
-                    icon = "fas fa-lock",
-                    label = "Advanced Lockpick Vehicle",
-                    action = lockpickVehicle,
-                    canInteract = canLockpickVehicle,
-                    item = 'advancedlockpick'
                 }
             },
             distance = 2.5
