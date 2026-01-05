@@ -579,36 +579,43 @@ function IsBlacklistedWeapon()
     return false
 end
 
-function LockpickDoor(isAdvanced)
+function LockpickDoor(isAdvanced, vehicle)
     local ped = PlayerPedId()
-    local pos = GetEntityCoords(ped)
-    local vehicle = QBCore.Functions.GetClosestVehicle()
-
+    
+    -- If vehicle is not provided, get closest vehicle
+    if not vehicle then
+        local pos = GetEntityCoords(ped)
+        vehicle = QBCore.Functions.GetClosestVehicle()
+        
+        if vehicle == nil or vehicle == 0 then return end
+        if #(pos - GetEntityCoords(vehicle)) > 2.5 then return end
+    end
+    
     if vehicle == nil or vehicle == 0 then return end
     if HasKeys(QBCore.Functions.GetPlate(vehicle)) then return end
-    if #(pos - GetEntityCoords(vehicle)) > 2.5 then return end
     if GetVehicleDoorLockStatus(vehicle) <= 0 then return end
 
     usingAdvanced = isAdvanced
     loadAnimDict("veh@break_in@0h@p_m_one@")
-    TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
-    
-    -- Use Maze puzzle instead of Circle minigame
     if usingAdvanced then
-        -- Advanced lockpick: Easier maze (more time)
-        exports['ps-ui']:Maze(function(success)
-            lockpickFinish(success)
-        end, 25) -- Time limit in seconds (easier for advanced)
+        TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
+        exports['ps-ui']:Circle(function(success)
+            lockpickFinish(success, vehicle)
+        end, 2, 20) -- NumberOfCircles, MS
     else
-        -- Normal lockpick: Harder maze (less time)
-        exports['ps-ui']:Maze(function(success)
-            lockpickFinish(success)
-        end, 15) -- Time limit in seconds (harder for normal)
+        TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
+        exports['ps-ui']:Circle(function(success)
+            lockpickFinish(success, vehicle)
+        end, 4, 10) -- NumberOfCircles, MS
     end
 end
 
-function lockpickFinish(success)
-    local vehicle = QBCore.Functions.GetClosestVehicle()
+function lockpickFinish(success, vehicle)
+    if not vehicle then
+        vehicle = QBCore.Functions.GetClosestVehicle()
+    end
+    
+    if not vehicle or vehicle == 0 then return end
 
     local chance = math.random()
     if success then
@@ -639,33 +646,34 @@ function lockpickFinish(success)
 end
 
 function Hotwire(vehicle, plate)
+    local hotwireTime = math.random(Config.minHotwireTime, Config.maxHotwireTime)
     local ped = PlayerPedId()
     IsHotwiring = true
 
     SetVehicleAlarm(vehicle, true)
-    SetVehicleAlarmTimeLeft(vehicle, 30000) -- Set alarm for 30 seconds
+    SetVehicleAlarmTimeLeft(vehicle, hotwireTime)
     
     -- Play hotwire animation
     loadAnimDict("anim@amb@clubhouse@tutorial@bkr_tut_ig3@")
-    TaskPlayAnim(ped, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer", 3.0, 3.0, -1, 49, 0, false, false, false)
+    TaskPlayAnim(ped, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
     
-    -- Use Scrambler puzzle instead of random chance
-    exports['ps-ui']:Scrambler(function(success)
+    -- Use Circle minigame instead of random chance
+    exports['ps-ui']:Circle(function(success)
         StopAnimTask(ped, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer", 1.0)
         TriggerServerEvent('hud:server:GainStress', math.random(1, 4))
         
         if success then
-            -- Puzzle solved successfully - give keys
+            -- Circle minigame solved successfully - give keys
             TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
             QBCore.Functions.Notify(Lang:t("notify.vlockpick"), 'success')
         else
-            -- Puzzle failed
+            -- Circle minigame failed
             QBCore.Functions.Notify(Lang:t("notify.fvlockpick"), "error")
         end
         
         Wait(Config.TimeBetweenHotwires)
         IsHotwiring = false
-    end, "numeric", 30, 0) -- Type: numeric, Time: 30 seconds, Mirrored: 0 (normal)
+    end, 3, 15) -- NumberOfCircles, MS
     
     SetTimeout(10000, function()
         AttemptPoliceAlert("steal")
@@ -795,7 +803,113 @@ RegisterNUICallback('trunk', function()
     ToggleVehicleTrunk(GetVehicle())
 	SetNuiFocus(false, false)
 end)
+
+-----------------------
+----   Target System Integration   ----
+-----------------------
+-- Add lockpick option to vehicles via target system
+CreateThread(function()
+    local target
+    
+    -- Check which target system is available
+    if GetResourceState('ox_target'):find('start') then
+        target = {
+            ox = true,
+            exp = exports.ox_target
+        }
+    elseif GetResourceState('qb-target'):find('start') then
+        target = {
+            qb = true,
+            exp = exports['qb-target']
+        }
+    end
+    
+    if not target then return end
+    
+    -- Function to check if vehicle can be lockpicked
+    local function canLockpickVehicle(entity)
+        if not entity or entity == 0 then return false end
+        if not DoesEntityExist(entity) then return false end
+        if not IsEntityAVehicle(entity) then return false end
+        
+        local ped = PlayerPedId()
+        local pos = GetEntityCoords(ped)
+        local vehiclePos = GetEntityCoords(entity)
+        
+        -- Check distance
+        if #(pos - vehiclePos) > 2.5 then return false end
+        
+        -- Check if already has keys
+        local plate = QBCore.Functions.GetPlate(entity)
+        if HasKeys(plate) then return false end
+        
+        -- Check if vehicle is locked
+        if GetVehicleDoorLockStatus(entity) <= 0 then return false end
+        
+        -- Check if player has lockpick item
+        local hasLockpick = QBCore.Functions.HasItem('lockpick')
+        local hasAdvancedLockpick = QBCore.Functions.HasItem('advancedlockpick')
+        
+        return hasLockpick or hasAdvancedLockpick
+    end
+    
+    -- Function to lockpick vehicle
+    local function lockpickVehicle(data)
+        local vehicle = data.entity or data
+        if not vehicle or vehicle == 0 then return end
+        
+        local hasAdvanced = QBCore.Functions.HasItem('advancedlockpick')
+        LockpickDoor(hasAdvanced, vehicle)
+    end
+    
+    if target.ox then
+        -- ox_target integration
+        target.exp:addGlobalVehicle({
+            {
+                name = 'lockpickVehicle',
+                label = 'Lockpick Vehicle',
+                icon = 'fas fa-lock',
+                onSelect = lockpickVehicle,
+                canInteract = canLockpickVehicle,
+                items = { 'lockpick', 'advancedlockpick' },
+                distance = 2.5
+            }
+        })
+    else
+        -- qb-target integration - use door bones
+        local bones = {
+            "door_dside_f",
+            "door_dside_r",
+            "door_pside_f",
+            "door_pside_r"
+        }
+        exports['qb-target']:AddTargetBone(bones, {
+            options = {
+                {
+                    num = 1,
+                    type = "client",
+                    icon = "fas fa-lock",
+                    label = "Lockpick Vehicle",
+                    action = lockpickVehicle,
+                    canInteract = canLockpickVehicle,
+                    item = 'lockpick'
+                },
+                {
+                    num = 2,
+                    type = "client",
+                    icon = "fas fa-lock",
+                    label = "Advanced Lockpick Vehicle",
+                    action = lockpickVehicle,
+                    canInteract = canLockpickVehicle,
+                    item = 'advancedlockpick'
+                }
+            },
+            distance = 2.5
+        })
+    end
+end)
 RegisterNUICallback('engine', function()
     ToggleEngine(GetVehicle())
 	SetNuiFocus(false, false)
 end)
+
