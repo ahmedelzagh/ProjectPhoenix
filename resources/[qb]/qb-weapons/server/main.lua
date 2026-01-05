@@ -289,6 +289,50 @@ RegisterNetEvent('weapons:server:removeWeaponAmmoItem', function(item)
     Player.Functions.RemoveItem(item.name, 1, item.slot)
 end)
 
+-- Ammo type to item mapping
+local AmmoItemMap = {
+    ['AMMO_PISTOL'] = {item = 'pistol_ammo', bulletsPerItem = 12},
+    ['AMMO_RIFLE'] = {item = 'rifle_ammo', bulletsPerItem = 30},
+    ['AMMO_SMG'] = {item = 'smg_ammo', bulletsPerItem = 20},
+    ['AMMO_SHOTGUN'] = {item = 'shotgun_ammo', bulletsPerItem = 10},
+    ['AMMO_MG'] = {item = 'mg_ammo', bulletsPerItem = 30},
+    ['AMMO_SNIPER'] = {item = 'snp_ammo', bulletsPerItem = 10},
+    ['AMMO_EMPLAUNCHER'] = {item = 'emp_ammo', bulletsPerItem = 10},
+}
+
+-- Callback to check and consume ammo from inventory
+QBCore.Functions.CreateCallback('weapons:server:ReloadWeapon', function(source, cb, ammoType, neededBullets)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return cb(false, 0) end
+
+    local ammoData = AmmoItemMap[ammoType]
+    if not ammoData then return cb(false, 0) end
+
+    -- Check how many ammo items the player has
+    local hasItem = Player.Functions.GetItemByName(ammoData.item)
+    if not hasItem or hasItem.amount <= 0 then
+        return cb(false, 0)
+    end
+
+    -- Calculate how many items we need to consume to get the needed bullets
+    local itemsNeeded = math.ceil(neededBullets / ammoData.bulletsPerItem)
+    
+    -- We can only consume what the player has
+    local itemsToConsume = math.min(itemsNeeded, hasItem.amount)
+    
+    -- Calculate actual bullets we'll give (might be less than needed if player doesn't have enough items)
+    local bulletsToGive = itemsToConsume * ammoData.bulletsPerItem
+    bulletsToGive = math.min(bulletsToGive, neededBullets)
+    
+    -- Remove the ammo items
+    if Player.Functions.RemoveItem(ammoData.item, itemsToConsume) then
+        TriggerClientEvent('inventory:client:ItemBox', source, QBCore.Shared.Items[ammoData.item], "remove", itemsToConsume)
+        return cb(true, bulletsToGive)
+    else
+        return cb(false, 0)
+    end
+end)
+
 -- Commands
 
 QBCore.Commands.Add("repairweapon", "Repair Weapon (God Only)", {{name="hp", help=Lang:t('info.hp_of_weapon')}}, true, function(source, args)
