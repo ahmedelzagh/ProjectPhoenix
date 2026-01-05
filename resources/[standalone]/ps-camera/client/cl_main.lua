@@ -179,11 +179,13 @@ function CameraLoop()
                 if cameraprop then DeleteEntity(cameraprop) end
             elseif IsControlJustPressed(1, 176) then
                 PlaySoundFrontend(-1, "Camera_Shoot", "Phone_Soundset_Franklin", false)
-                exports['screenshot-basic']:requestScreenshot(function(data)
+                exports['screenshot-basic']:requestScreenshotUpload(tostring(hook), "files[]", function(data)
+                    local image = json.decode(data)
                     camera = false
                     if cameraprop then DeleteEntity(cameraprop) end
                     ClearPedTasks(lPed)
-                    TriggerServerEvent("ps-camera:CreatePhoto", data)
+                    TriggerServerEvent("ps-camera:CreatePhoto", json.encode(image.attachments[1].proxy_url))
+					SendNUIMessage({action = "SavePic", pic = json.encode(image.attachments[1].proxy_url)})
                     SendNUIMessage({action = "hideOverlay"})
                 end)
             end
@@ -206,15 +208,11 @@ function CameraLoop()
     end)
 end
 
-RegisterNetEvent("ps-camera:getStreetName", function(base64Data, coords)
+RegisterNetEvent("ps-camera:getStreetName", function(url, coords)
     local streetHash, crossingHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)
     local streetName = GetStreetNameFromHashKey(streetHash)
 
-    TriggerServerEvent("ps-camera:savePhoto", base64Data, streetName)
-end)
-
-RegisterNetEvent("ps-camera:savePhotoClientCallback", function(imageUrl)
-    SendNUIMessage({action = "SavePic", pic = json.encode(imageUrl)})
+    TriggerServerEvent("ps-camera:savePhoto", url, streetName)
 end)
 
 
