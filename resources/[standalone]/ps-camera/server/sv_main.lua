@@ -1,7 +1,10 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Load webhook from environment variable (set in server.env.cfg)
+-- Falls back to empty string if not set (will show error in console)
 Config = {
     Inv = "qb", -- qb(=lj) or ox [Inventory system]
-    webhook = "", -- Add Discord webhook
+    webhook = GetConvar('ps_camera_webhook', ''), -- Set in server.env.cfg: set ps_camera_webhook "YOUR_WEBHOOK_URL"
     UsePsMDT = false,
 }
 local function ConfigInvInvalid()
@@ -62,6 +65,7 @@ RegisterNetEvent("ps-camera:savePhoto", function(url, streetName)
         ox_inventory:AddItem(source, "photo", 1, info)
         
     end
+    
     if Config.UsePsMDT then
         TriggerEvent("ps-camera:ps-mdt", source, url)
     end

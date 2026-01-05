@@ -1,6 +1,8 @@
 Config = {}
 
-Config.webhook = "https://discord.com/api/webhooks/1116486653230461079/3tOTPFxvSuBBKBhlfd4WAGu0GzPjJqZgalzDOqLlFm4TISPxu1TEEli6FhbPfU2Rdgkk" --Your webhook address for the discord channel where the Bodycam recordings will be sent
+-- Load webhook from environment variable (set in server.env.cfg)
+-- Falls back to empty string if not set (will show error in console)
+Config.webhook = GetConvar('qb_bodycam_webhook', '') -- Set in server.env.cfg: set qb_bodycam_webhook "YOUR_WEBHOOK_URL"
  
 Config.resolutions = "1080" -- or "1080p" , "480p" , "360p" /  Image quality of the video to be recorded.
 

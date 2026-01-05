@@ -103,7 +103,7 @@ AddEventHandler('playerDropped', function(reason)
 		})
 		if result then
 			local time_formatted = format_time(tonumber(result))
-			sendToDiscord(16711680, "MDT Clock-Out", 'Player: **' ..  firstName .. " ".. lastName .. '**\n\nJob: **' .. PlayerData.job.name .. '**\n\nRank: **' .. PlayerData.job.grade.name .. '**\n\nStatus: **Off Duty**\n Total time:' .. time_formatted, "ps-mdt | Made by Project Sloth")
+			sendToDiscord(16711680, "MDT Clock-Out", 'Player: **' ..  firstName .. " ".. lastName .. '**\n\nJob: **' .. PlayerData.job.name .. '**\n\nRank: **' .. PlayerData.job.grade.name .. '**\n\nStatus: **Off Duty**\n Total time:' .. time_formatted, "")
 		end
 	end
 
@@ -176,7 +176,7 @@ RegisterNetEvent("ps-mdt:server:ClockSystem", function()
 			clock_in_time = time
 		}, function()
 		end)
-		sendToDiscord(65280, "MDT Clock-In", 'Player: **' ..  firstName .. " ".. lastName .. '**\n\nJob: **' .. PlayerData.job.name .. '**\n\nRank: **' .. PlayerData.job.grade.name .. '**\n\nStatus: **On Duty**', "ps-mdt | Made by Project Sloth")
+		sendToDiscord(65280, "MDT Clock-In", 'Player: **' ..  firstName .. " ".. lastName .. '**\n\nJob: **' .. PlayerData.job.name .. '**\n\nRank: **' .. PlayerData.job.grade.name .. '**\n\nStatus: **On Duty**', "")
     else
 		TriggerClientEvent('QBCore:Notify', source, "You're clocked-out", 'success')
 		MySQL.query.await('UPDATE mdt_clocking SET clock_out_time = NOW(), total_time = TIMESTAMPDIFF(SECOND, clock_in_time, NOW()) WHERE user_id = @user_id ORDER BY id DESC LIMIT 1', {
@@ -188,7 +188,7 @@ RegisterNetEvent("ps-mdt:server:ClockSystem", function()
 		})
 		local time_formatted = format_time(tonumber(result))
 
-		sendToDiscord(16711680, "MDT Clock-Out", 'Player: **' ..  firstName .. " ".. lastName .. '**\n\nJob: **' .. PlayerData.job.name .. '**\n\nRank: **' .. PlayerData.job.grade.name .. '**\n\nStatus: **Off Duty**\n Total time:' .. time_formatted, "ps-mdt | Made by Project Sloth")
+		sendToDiscord(16711680, "MDT Clock-Out", 'Player: **' ..  firstName .. " ".. lastName .. '**\n\nJob: **' .. PlayerData.job.name .. '**\n\nRank: **' .. PlayerData.job.grade.name .. '**\n\nStatus: **Off Duty**\n Total time:' .. time_formatted, "")
     end
 end)
 
@@ -1820,11 +1820,15 @@ function sendToDiscord(color, name, message, footer)
 				color = color,
 				title = "**".. name .."**",
 				description = message,
-				footer = {
-					text = footer,
-				},
 			}
 		}
+		
+		-- Only add footer if it's not empty
+		if footer and footer ~= "" then
+			embed[1].footer = {
+				text = footer,
+			}
+		end
 	
 		PerformHttpRequest(Config.ClockinWebhook, function(err, text, headers) end, 'POST', json.encode({username = name, embeds = embed}), { ['Content-Type'] = 'application/json' })
 	end

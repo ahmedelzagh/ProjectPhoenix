@@ -2,6 +2,8 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local PlayerData = QBCore.Functions.GetPlayerData()
 local CurrentWeaponData, CanShoot, MultiplierAmount = {}, true, 0
+local isReloading = false
+local lastReloadAttempt = 0
 
 -- Handlers
 
@@ -20,6 +22,10 @@ RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
         Config.WeaponRepairPoints[k].IsRepairing = false
         Config.WeaponRepairPoints[k].RepairingData = {}
     end
+end)
+
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
+    PlayerData = val
 end)
 
 -- Functions
@@ -132,6 +138,80 @@ end)
 
 CreateThread(function()
     SetWeaponsNoAutoswap(true)
+end)
+
+-- Automatic reload system using inventory bullets
+CreateThread(function()
+    while true do
+        if LocalPlayer.state.isLoggedIn then
+            local ped = PlayerPedId()
+            local weapon = GetSelectedPedWeapon(ped)
+            
+            -- Check if player pressed reload (Control 45) or if weapon is empty and player tries to shoot
+            if CurrentWeaponData and next(CurrentWeaponData) and not isReloading then
+                if weapon ~= `WEAPON_UNARMED` and QBCore.Shared.Weapons[weapon] then
+                    local currentAmmo = GetAmmoInPedWeapon(ped, weapon)
+                    local _, maxAmmo = GetMaxAmmo(ped, weapon)
+                    local weaponData = QBCore.Shared.Weapons[weapon]
+                    local ammoType = weaponData.ammotype
+                    
+                    -- Check if reload key is pressed (Control 45) or if weapon is empty
+                    local shouldReload = false
+                    if IsControlJustPressed(0, 45) then -- R key (reload)
+                        shouldReload = true
+                    elseif currentAmmo == 0 and IsControlJustPressed(0, 24) then -- Empty and trying to shoot
+                        shouldReload = true
+                    end
+                    
+                    if shouldReload and currentAmmo < maxAmmo and ammoType then
+                        -- Prevent spam reloading
+                        local currentTime = GetGameTimer()
+                        if currentTime - lastReloadAttempt < 500 then
+                            Wait(100)
+                            goto continue
+                        end
+                        lastReloadAttempt = currentTime
+                        
+                        local neededBullets = maxAmmo - currentAmmo
+                        local weaponHash = weapon -- Store weapon hash for callback
+                        
+                        -- Check inventory and consume bullets
+                        QBCore.Functions.TriggerCallback('weapons:server:ReloadWeapon', function(success, bulletsGiven)
+                            if success and bulletsGiven > 0 then
+                                isReloading = true
+                                QBCore.Functions.Progressbar("reloading_weapon", Lang:t('info.loading_bullets'), Config.ReloadTime, false, true, {
+                                    disableMovement = false,
+                                    disableCarMovement = false,
+                                    disableMouse = false,
+                                    disableCombat = true,
+                                }, {}, {}, {}, function() -- Done
+                                    local ped = PlayerPedId()
+                                    local currentWeapon = GetSelectedPedWeapon(ped)
+                                    if currentWeapon == weaponHash and QBCore.Shared.Weapons[currentWeapon] then
+                                        local currentAmmoNow = GetAmmoInPedWeapon(ped, currentWeapon)
+                                        local _, maxAmmoNow = GetMaxAmmo(ped, currentWeapon)
+                                        local newAmmo = math.min(currentAmmoNow + bulletsGiven, maxAmmoNow)
+                                        SetPedAmmo(ped, currentWeapon, newAmmo)
+                                        TaskReloadWeapon(ped)
+                                        TriggerServerEvent("weapons:server:UpdateWeaponAmmo", CurrentWeaponData, newAmmo)
+                                        TriggerEvent('QBCore:Notify', Lang:t('success.reloaded'), "success")
+                                    end
+                                    isReloading = false
+                                end, function() -- Cancel
+                                    QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
+                                    isReloading = false
+                                end)
+                            elseif not success then
+                                QBCore.Functions.Notify(Lang:t('error.no_ammo') or "You don't have enough ammo", "error")
+                            end
+                        end, ammoType, neededBullets)
+                    end
+                    ::continue::
+                end
+            end
+        end
+        Wait(0)
+    end
 end)
 
 CreateThread(function()
