@@ -39,6 +39,19 @@ local function createPed()
         SetEntityInvincible(BlackMarketPed[k], true)
         SetBlockingOfNonTemporaryEvents(BlackMarketPed[k], true)
 
+        -- Create blip if enabled
+        if v.showblip then
+            local blip = AddBlipForCoord(v.coords.x, v.coords.y, v.coords.z)
+            SetBlipSprite(blip, v.blipsprite)
+            SetBlipDisplay(blip, 4)
+            SetBlipScale(blip, v.blipscale)
+            SetBlipColour(blip, v.blipcolor)
+            SetBlipAsShortRange(blip, true)
+            BeginTextCommandSetBlipName("STRING")
+            AddTextComponentSubstringPlayerName(v.label)
+            EndTextCommandSetBlipName(blip)
+        end
+
         if Config.UseTarget then
             exports['qb-target']:AddTargetEntity(BlackMarketPed[k], {
                 options = {

@@ -10,10 +10,10 @@ Config.Locations = {
         ped = "g_m_m_chicold_01", -- Scary looking gang member
         scenario = "WORLD_HUMAN_DRUG_DEALER_HARD",
         label = "Black Market Dealer",
-        showblip = false, -- Hidden on map
-        blipsprite = 0,
-        blipscale = 0.0,
-        blipcolor = 0,
+        showblip = true, -- Hidden on map
+        blipsprite = 500,
+        blipscale = 0.7,
+        blipcolor = 1,
         products = "blackmarket",
     },
     -- Add more locations as needed
