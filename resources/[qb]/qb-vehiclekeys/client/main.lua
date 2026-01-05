@@ -591,26 +591,19 @@ function LockpickDoor(isAdvanced)
 
     usingAdvanced = isAdvanced
     loadAnimDict("veh@break_in@0h@p_m_one@")
+    TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
+    
+    -- Use Maze puzzle instead of Circle minigame
     if usingAdvanced then
-        TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
-        exports['ps-ui']:Circle(function(success)
-            if success then
-                print("success")
-            else
-                print("fail")
-            end
+        -- Advanced lockpick: Easier maze (more time)
+        exports['ps-ui']:Maze(function(success)
             lockpickFinish(success)
-        end, 2, 20) -- NumberOfCircles, MS
+        end, 25) -- Time limit in seconds (easier for advanced)
     else
-        TaskPlayAnim(ped, "veh@break_in@0h@p_m_one@", "low_force_entry_ds", 3.0, 3.0, -1, 16, 0, 0, 0, 0)
-        exports['ps-ui']:Circle(function(success)
-            if success then
-                print("success")
-            else
-                print("fail")
-            end
+        -- Normal lockpick: Harder maze (less time)
+        exports['ps-ui']:Maze(function(success)
             lockpickFinish(success)
-        end, 4, 10) -- NumberOfCircles, MS
+        end, 15) -- Time limit in seconds (harder for normal)
     end
 end
 
@@ -646,39 +639,37 @@ function lockpickFinish(success)
 end
 
 function Hotwire(vehicle, plate)
-    local hotwireTime = math.random(Config.minHotwireTime, Config.maxHotwireTime)
     local ped = PlayerPedId()
     IsHotwiring = true
 
     SetVehicleAlarm(vehicle, true)
-    SetVehicleAlarmTimeLeft(vehicle, hotwireTime)
-    QBCore.Functions.Progressbar("hotwire_vehicle", Lang:t("progress.hskeys"), hotwireTime, false, true, {
-        disableMovement = true,
-        disableCarMovement = true,
-        disableMouse = false,
-        disableCombat = true
-    }, {
-        animDict = "anim@amb@clubhouse@tutorial@bkr_tut_ig3@",
-        anim = "machinic_loop_mechandplayer",
-        flags = 16
-    }, {}, {}, function() -- Done
+    SetVehicleAlarmTimeLeft(vehicle, 30000) -- Set alarm for 30 seconds
+    
+    -- Play hotwire animation
+    loadAnimDict("anim@amb@clubhouse@tutorial@bkr_tut_ig3@")
+    TaskPlayAnim(ped, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer", 3.0, 3.0, -1, 49, 0, false, false, false)
+    
+    -- Use Scrambler puzzle instead of random chance
+    exports['ps-ui']:Scrambler(function(success)
         StopAnimTask(ped, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer", 1.0)
         TriggerServerEvent('hud:server:GainStress', math.random(1, 4))
-        if (math.random() <= Config.HotwireChance) then
+        
+        if success then
+            -- Puzzle solved successfully - give keys
             TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
+            QBCore.Functions.Notify(Lang:t("notify.vlockpick"), 'success')
         else
+            -- Puzzle failed
             QBCore.Functions.Notify(Lang:t("notify.fvlockpick"), "error")
         end
+        
         Wait(Config.TimeBetweenHotwires)
         IsHotwiring = false
-    end, function() -- Cancel
-        StopAnimTask(ped, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer", 1.0)
-        IsHotwiring = false
-    end)
+    end, "numeric", 30, 0) -- Type: numeric, Time: 30 seconds, Mirrored: 0 (normal)
+    
     SetTimeout(10000, function()
         AttemptPoliceAlert("steal")
     end)
-    IsHotwiring = false
 end
 function CarjackVehicle(target)
     if not Config.CarJackEnable then return end
