@@ -6,11 +6,11 @@ Config.UseTarget = GetConvar('UseTarget', 'false') == 'true' -- Use qb-target in
 Config.Locations = {
     [1] = {
         name = "blackmarket1",
-        coords = vector4(309.09, -913.75, 29.29, 340.0), -- Downtown alley (example location)
+        coords = vector4(-3.37, -1821.34, 29.54, 231.47), -- Outside location (no MLO needed)
         ped = "g_m_m_chicold_01", -- Scary looking gang member
         scenario = "WORLD_HUMAN_DRUG_DEALER_HARD",
         label = "Black Market Dealer",
-        showblip = true, -- Hidden on map
+        showblip = true, -- Visible on map
         blipsprite = 500,
         blipscale = 0.7,
         blipcolor = 1,
