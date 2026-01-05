@@ -91,10 +91,10 @@ local function robKeyLoop()
                         sleep = 0
 
                         local vehiclePos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0, 1.0, 0.5)
-                        DrawText3D(vehiclePos.x, vehiclePos.y, vehiclePos.z, Lang:t("info.skeys"))
+                        DrawText3D(vehiclePos.x, vehiclePos.y, vehiclePos.z, Lang:t("info.hotwire"))
                         SetVehicleEngineOn(vehicle, false, false, true)
 
-                        if IsControlJustPressed(0, 74) then
+                        if IsControlJustPressed(0, 38) then -- E key (38) instead of H (74)
                             Hotwire(vehicle, plate)
                         end
                     end
@@ -646,12 +646,11 @@ function lockpickFinish(success, vehicle)
 end
 
 function Hotwire(vehicle, plate)
-    local hotwireTime = math.random(Config.minHotwireTime, Config.maxHotwireTime)
     local ped = PlayerPedId()
     IsHotwiring = true
 
     SetVehicleAlarm(vehicle, true)
-    SetVehicleAlarmTimeLeft(vehicle, hotwireTime)
+    SetVehicleAlarmTimeLeft(vehicle, 30000) -- Set alarm for 30 seconds
     
     -- Play hotwire animation
     loadAnimDict("anim@amb@clubhouse@tutorial@bkr_tut_ig3@")
@@ -663,12 +662,12 @@ function Hotwire(vehicle, plate)
         TriggerServerEvent('hud:server:GainStress', math.random(1, 4))
         
         if success then
-            -- Circle minigame solved successfully - give keys
+            -- Circle minigame solved successfully - hotwire successful, give keys
             TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
-            QBCore.Functions.Notify(Lang:t("notify.vlockpick"), 'success')
+            QBCore.Functions.Notify(Lang:t("notify.hotwire_success"), 'success')
         else
-            -- Circle minigame failed
-            QBCore.Functions.Notify(Lang:t("notify.fvlockpick"), "error")
+            -- Circle minigame failed - hotwire failed
+            QBCore.Functions.Notify(Lang:t("notify.hotwire_fail"), "error")
         end
         
         Wait(Config.TimeBetweenHotwires)
