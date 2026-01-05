@@ -1,3 +1,5 @@
+# Environment-specific overrides
+server.env.cfg
 
 cache/*
 
