@@ -55,8 +55,21 @@ local function robKeyLoop()
                         elseif Config.LockNPCDrivingCars then
                             TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), 2)
                         else
-                            TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), 1)
-                            TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
+                            local lockState = 1 -- Default to unlocked
+                            
+                            -- Random chance to lock NPC driving cars (25% by default)
+                            if Config.RandomNPCLockChance > 0 then
+                                if math.random() <= Config.RandomNPCLockChance then
+                                    lockState = 2 -- Locked
+                                end
+                            end
+                            
+                            TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), lockState)
+                            
+                            -- Only give keys if car is unlocked
+                            if lockState == 1 then
+                                TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
+                            end
 
                             --Make passengers flee
                             local pedsInVehicle = GetPedsInVehicle(entering)
@@ -70,11 +83,19 @@ local function robKeyLoop()
                     elseif driver == 0 and entering ~= lastPickedVehicle and not HasKeys(plate) and not isTakingKeys then
                         QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:checkPlayerOwned', function(playerOwned)
                             if not playerOwned then
+                                local lockState = 1 -- Default to unlocked
+                                
                                 if Config.LockNPCParkedCars then
-                                    TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), 2)
-                                else
-                                    TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), 1)
+                                    -- Config says all parked cars should be locked
+                                    lockState = 2
+                                elseif Config.RandomNPCLockChance > 0 then
+                                    -- Random chance to lock (25% by default)
+                                    if math.random() <= Config.RandomNPCLockChance then
+                                        lockState = 2 -- Locked
+                                    end
                                 end
+                                
+                                TriggerServerEvent('qb-vehiclekeys:server:setVehLockState', NetworkGetNetworkIdFromEntity(entering), lockState)
                             end
                         end, plate)
 
