@@ -663,8 +663,8 @@ function Hotwire(vehicle, plate)
         
         if success then
             -- Circle minigame solved successfully - hotwire successful, give keys
+            -- Server will send "You get keys to the vehicle!" notification via GiveKeys function
             TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
-            QBCore.Functions.Notify(Lang:t("notify.hotwire_success"), 'success')
         else
             -- Circle minigame failed - hotwire failed
             QBCore.Functions.Notify(Lang:t("notify.hotwire_fail"), "error")
