@@ -298,13 +298,15 @@ RegisterNetEvent('weapons:client:DrawWeapon', function()
     robKeyLoop()
 end)
 
-
 RegisterNetEvent('lockpicks:UseLockpick', function(isAdvanced)
-    if exports['qb-config']:isPaidEnabled("avScripts") then
-        if exports['av_boosting']:isBoosting() then 
-            return 
-        end
-    end
+    -- If you use av_boosting and want to block lockpicks during boosting,
+    -- you can re‑enable this integration. For now it's disabled to avoid
+    -- export errors when av_boosting is not running.
+    -- if GetResourceState('av_boosting') == 'started' and exports['qb-config']:isPaidEnabled("avScripts") then
+    --     if exports['av_boosting']:isBoosting() then 
+    --         return 
+    --     end
+    -- end
     LockpickDoor(isAdvanced)
 end)
 -- Backwards Compatibility ONLY -- Remove at some point --
