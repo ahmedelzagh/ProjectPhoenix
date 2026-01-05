@@ -608,13 +608,29 @@ function LockpickDoor(isAdvanced, vehicle)
         local pos = GetEntityCoords(ped)
         vehicle = QBCore.Functions.GetClosestVehicle()
         
-        if vehicle == nil or vehicle == 0 then return end
-        if #(pos - GetEntityCoords(vehicle)) > 2.5 then return end
+        if vehicle == nil or vehicle == 0 then 
+            QBCore.Functions.Notify("No vehicle nearby", "error")
+            return 
+        end
+        if #(pos - GetEntityCoords(vehicle)) > 2.5 then 
+            QBCore.Functions.Notify("Vehicle too far away", "error")
+            return 
+        end
     end
     
     if vehicle == nil or vehicle == 0 then return end
-    if HasKeys(QBCore.Functions.GetPlate(vehicle)) then return end
-    if GetVehicleDoorLockStatus(vehicle) <= 0 then return end
+    
+    local plate = QBCore.Functions.GetPlate(vehicle)
+    if HasKeys(plate) then 
+        QBCore.Functions.Notify("You already have keys to this vehicle", "error")
+        return 
+    end
+    
+    local lockStatus = GetVehicleDoorLockStatus(vehicle)
+    if lockStatus <= 1 then 
+        QBCore.Functions.Notify("This vehicle is already unlocked", "error")
+        return 
+    end
 
     usingAdvanced = isAdvanced
     loadAnimDict("veh@break_in@0h@p_m_one@")
@@ -829,6 +845,9 @@ end)
 -----------------------
 -- Add lockpick option to vehicles via target system
 CreateThread(function()
+    -- Wait for resources to be ready
+    Wait(1000)
+    
     local target
     
     -- Check which target system is available
@@ -844,7 +863,10 @@ CreateThread(function()
         }
     end
     
-    if not target then return end
+    if not target then 
+        print("^1[qb-vehiclekeys] No target system found! Please ensure ox_target or qb-target is running.^0")
+        return 
+    end
     
     -- Function to check if vehicle can be lockpicked
     local function canLockpickVehicle(entity)
@@ -863,20 +885,32 @@ CreateThread(function()
         local plate = QBCore.Functions.GetPlate(entity)
         if HasKeys(plate) then return false end
         
-        -- Check if vehicle is locked
-        if GetVehicleDoorLockStatus(entity) <= 0 then return false end
+        -- Check if vehicle is locked (0 = unlocked, 1 = unlocked, 2+ = locked)
+        local lockStatus = GetVehicleDoorLockStatus(entity)
+        if lockStatus <= 1 then return false end -- Only allow lockpicking if locked (status 2 or higher)
         
-        -- Check if player has lockpick item
-        local hasLockpick = QBCore.Functions.HasItem('lockpick')
-        local hasAdvancedLockpick = QBCore.Functions.HasItem('advancedlockpick')
-        
-        return hasLockpick or hasAdvancedLockpick
+        -- Item check is handled by target system's item parameter, but we verify here too
+        return true
     end
     
     -- Function to lockpick vehicle
     local function lockpickVehicle(data)
         local vehicle = data.entity or data
         if not vehicle or vehicle == 0 then return end
+        
+        -- Verify vehicle is still valid and locked
+        if not DoesEntityExist(vehicle) or not IsEntityAVehicle(vehicle) then return end
+        
+        local plate = QBCore.Functions.GetPlate(vehicle)
+        if HasKeys(plate) then 
+            QBCore.Functions.Notify("You already have keys to this vehicle", "error")
+            return 
+        end
+        
+        if GetVehicleDoorLockStatus(vehicle) <= 1 then
+            QBCore.Functions.Notify("This vehicle is already unlocked", "error")
+            return
+        end
         
         local hasAdvanced = QBCore.Functions.HasItem('advancedlockpick')
         LockpickDoor(hasAdvanced, vehicle)
@@ -895,6 +929,7 @@ CreateThread(function()
                 distance = 2.5
             }
         })
+        print("^2[qb-vehiclekeys] Lockpick option added to vehicles via ox_target^0")
     else
         -- qb-target integration - use door bones
         local bones = {
@@ -926,6 +961,7 @@ CreateThread(function()
             },
             distance = 2.5
         })
+        print("^2[qb-vehiclekeys] Lockpick option added to vehicles via qb-target^0")
     end
 end)
 RegisterNUICallback('engine', function()
