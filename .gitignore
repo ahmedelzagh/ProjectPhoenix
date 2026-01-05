@@ -1,3 +1,5 @@
+# Environment-specific overrides
+server.env.cfg
 
 cache/*
 
@@ -7,3 +9,7 @@ cache/*
 # Backup files
 *.backup
 *.bkp
+
+# Large resource files
+resources/\[vehicles\]/PLOKS_CARS/
+resources/\[vehicles\]/VehicleSpawner/
