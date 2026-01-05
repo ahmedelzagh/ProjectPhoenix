@@ -917,18 +917,30 @@ CreateThread(function()
     end
     
     if target.ox then
-        -- ox_target integration
-        target.exp:addGlobalVehicle({
+        -- ox_target integration - add options for both lockpick types
+        local options = {
             {
                 name = 'lockpickVehicle',
                 label = 'Lockpick Vehicle',
                 icon = 'fas fa-lock',
+                bones = { 'door_dside_f', 'door_dside_r', 'door_pside_f', 'door_pside_r' },
                 onSelect = lockpickVehicle,
                 canInteract = canLockpickVehicle,
-                items = { 'lockpick', 'advancedlockpick' },
+                items = 'lockpick',
+                distance = 2.5
+            },
+            {
+                name = 'advancedLockpickVehicle',
+                label = 'Advanced Lockpick Vehicle',
+                icon = 'fas fa-lock',
+                bones = { 'door_dside_f', 'door_dside_r', 'door_pside_f', 'door_pside_r' },
+                onSelect = lockpickVehicle,
+                canInteract = canLockpickVehicle,
+                items = 'advancedlockpick',
                 distance = 2.5
             }
-        })
+        }
+        exports.ox_target:addGlobalVehicle(options)
         print("^2[qb-vehiclekeys] Lockpick option added to vehicles via ox_target^0")
     else
         -- qb-target integration - use door bones
