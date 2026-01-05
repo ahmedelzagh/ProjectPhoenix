@@ -1,6 +1,12 @@
 # Environment-specific overrides
 server.env.cfg
 
+# Secrets and sensitive config
+secrets.lua
+**/secrets.lua
+**/*secrets*.lua
+**/*.secrets.lua
+
 cache/*
 
 # History files

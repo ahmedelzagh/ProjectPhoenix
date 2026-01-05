@@ -11,7 +11,9 @@ Config.BillingCommissions = { -- This is a percentage (0.10) == 10%
 }
 
 -- Web hook for camera ( NOT GO PRO )
-Config.Webhook = ''
+-- Load webhook from environment variable (set in server.env.cfg)
+-- Falls back to empty string if not set
+Config.Webhook = GetConvar('qb_phone_webhook', '') -- Set in server.env.cfg: set qb_phone_webhook "YOUR_WEBHOOK_URL"
 
 -- Item name for pings app ( Having a VPN sends an anonymous ping, else sends the players name)
 Config.VPNItem = 'vpn'
