@@ -1,1 +1,0 @@
-# Add in [server.cfg] this line: add_ace group.admin smoke.editor allow
