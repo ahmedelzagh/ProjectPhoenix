@@ -1,1 +1,0 @@
-# After script update, always copy-paste your current weapons.json file into new version!
